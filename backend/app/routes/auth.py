@@ -22,8 +22,3 @@ async def login(
     db: DbSession,
 ):
     return await AuthService(db).login(form.username, form.password)
-
-
-@router.get("/me", response_model=UserResponse)
-async def me(current_user: CurrentUser):
-    return current_user
