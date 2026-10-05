@@ -23,10 +23,6 @@ class RegisterRequest(BaseModel):
 
         return v
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: SecretStr = Field(min_length=8, max_length=20)
-
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
