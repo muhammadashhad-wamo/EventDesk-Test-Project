@@ -3,8 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 
-from app.core.enums import UserRole
-
 
 class UserRepository:
     def __init__(self, db: AsyncSession) -> None:
