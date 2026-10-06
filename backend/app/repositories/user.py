@@ -28,14 +28,16 @@ class UserRepository:
         return user
 
     async def update(self, *, user: User, data: dict) -> User:
-        for field, value in data.items():
-            setattr(user, field, value)
+        db_user = await self.db.merge(user)
 
-        self.db.add(user)
+        for field, value in data.items():
+            setattr(db_user, field, value)
 
         await self.db.flush()
 
-        return user
+        return db_user
 
-    async def delete(self, * user: User) -> None:
-        await self.db.delete(user)
+    async def delete(self, *, user: User) -> None:
+        db_user = await self.db.merge(user)
+        db_user.is_active = False
+        await self.db.flush()

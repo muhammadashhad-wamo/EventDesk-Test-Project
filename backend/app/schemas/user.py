@@ -3,7 +3,7 @@ from app.core.enums import UserRole
 from typing import Annotated
 
 class UserResponse(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     id: int
     name: str = Field(min_length=1, max_length=50)
@@ -11,14 +11,19 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
 
+class UserBase(BaseModel):
+    model_config = ConfigDict(use_enum_values=True, from_attributes=True)
+
+    id: int
+    name: Annotated[str, Field(min_length=1, max_length=50)]
+    email: EmailStr
+    password_hash: str
+    role: UserRole
+    is_active: bool
+
 class UserUpdate(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
-    
     name: Annotated[str | None, Field(min_length=1, max_length=50)] = None
     email: EmailStr | None = None
-    password: SecretStr | None = None
-    role: UserRole | None = None
-    is_active: bool | None = None
 
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=50)
