@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 from app.core.dependencies import CurrentUser
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest
 
 from app.services.user import UserService
 
@@ -29,3 +29,10 @@ async def delete_current_user(
     db: DbSession
 ):
     await UserService(db).delete(user=current_user)
+
+@router.patch(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def change_password(data: ChangePasswordRequest, current_user: CurrentUser, db: DbSession):
+    await UserService(db).update_password(user=current_user, data=data)

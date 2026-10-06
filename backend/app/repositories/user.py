@@ -37,6 +37,11 @@ class UserRepository:
 
         return db_user
 
+    async def update_password(self, *, user: User, new_password_hash: str) -> None:
+        db_user = await self.db.merge(user)
+        db_user.password_hash = new_password_hash
+        await self.db.flush()
+
     async def delete(self, *, user: User) -> None:
         db_user = await self.db.merge(user)
         db_user.is_active = False
