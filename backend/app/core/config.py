@@ -1,19 +1,21 @@
-from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+class Settings(BaseSettings):
+    APP_NAME: str
+    ASYNC_DB_URL: str
+    SYNC_DB_URL: str
+
+    model_config = SettingsConfigDict(
+        env_file=(
+            BASE_DIR / "app" / "db" / ".env.db",
+            BASE_DIR / "app" / ".env.app"
+        ),
+        env_file_encoding="utf-8",
+        extra="ignore" # Review this again
+    )
 
 
-class Config(BaseSettings):
-    app_name: str = "ScalableFastAPIProject"
-    debug: bool = False
-    db_user: str = ""
-    db_password: str = ""
-    db_name: str = "test.db"
-
-    @property
-    def db_url(self):
-        return f"sqlite:///./{self.db_name}"
-
-
-config = Config()
+settings = Settings()
