@@ -43,3 +43,7 @@ async def change_password(data: ChangePasswordRequest, current_user: CurrentUser
 @admin_router.get("/", response_model=list[UserResponse])
 async def get_users(current_admin: CurrentAdmin, db: DbSession):
     return await UserService(db).get_users()
+
+@admin_router.get("/{user_id}", response_model=UserResponse)
+async def get_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
+    return await UserService(db).get_by_id(id=user_id)
