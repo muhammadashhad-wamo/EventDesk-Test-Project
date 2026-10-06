@@ -7,7 +7,7 @@ from app.schemas.user import UserUpdate
 
 from app.core.enums import UserRole
 
-from backend.app.db.session import User
+from app.db.session import User
 
 
 class UserService:
