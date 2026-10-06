@@ -3,8 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 
-from app.core.enums import UserRole
-
 
 class UserRepository:
     def __init__(self, db: AsyncSession) -> None:
@@ -28,3 +26,23 @@ class UserRepository:
         self.db.add(user)
         await self.db.flush()
         return user
+
+    async def update(self, *, user: User, data: dict) -> User:
+        db_user = await self.db.merge(user)
+
+        for field, value in data.items():
+            setattr(db_user, field, value)
+
+        await self.db.flush()
+
+        return db_user
+
+    async def update_password(self, *, user: User, new_password_hash: str) -> None:
+        db_user = await self.db.merge(user)
+        db_user.password_hash = new_password_hash
+        await self.db.flush()
+
+    async def delete(self, *, user: User) -> None:
+        db_user = await self.db.merge(user)
+        db_user.is_active = False
+        await self.db.flush()

@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.dependencies import CurrentUser, DbSession
+from app.core.dependencies import DbSession
 from app.schemas.auth import RegisterRequest, Token
 from app.schemas.user import UserResponse
 from app.services.auth import AuthService
@@ -22,8 +22,3 @@ async def login(
     db: DbSession,
 ):
     return await AuthService(db).login(form.username, form.password)
-
-
-@router.get("/me", response_model=UserResponse)
-async def me(current_user: CurrentUser):
-    return current_user

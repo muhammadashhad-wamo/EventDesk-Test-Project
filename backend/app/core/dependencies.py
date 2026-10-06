@@ -10,6 +10,7 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.schemas.user import UserBase
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -36,7 +37,7 @@ async def get_current_user(
         raise credentials_exception
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Account is deactivated")
-    return user
+    return UserBase.model_validate(user)
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
