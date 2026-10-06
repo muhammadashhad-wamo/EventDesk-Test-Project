@@ -39,7 +39,7 @@ class UserService:
                 detail="Current password is incorrect",
             )
 
-        new_password_hash = data.new_password.get_secret_value()
+        new_password_hash = hash_password(data.new_password.get_secret_value())
 
         db_user = User(**user.model_dump())
         await self.users.update_password(user=db_user, new_password_hash=new_password_hash)
