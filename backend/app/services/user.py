@@ -68,6 +68,12 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
+
+        if db_user.is_active == False:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User is already deleted"
+            )
         
         await self.users.delete(user=db_user)
         await self._db.commit()
