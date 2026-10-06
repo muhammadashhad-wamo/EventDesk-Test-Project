@@ -20,7 +20,7 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: DbSession,
-) -> User:
+) -> UserBase:
     credentials_exception = HTTPException(
         status.HTTP_401_UNAUTHORIZED,
         "Could not validate credentials",
