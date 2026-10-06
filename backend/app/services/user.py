@@ -6,15 +6,16 @@ from app.repositories.user import UserRepository
 from app.schemas.user import UserUpdate, UserResponse, UserBase, ChangePasswordRequest
 from app.core.security import verify_password, hash_password
 
-from app.core.enums import UserRole
-
 
 class UserService:
     def __init__(self, db: AsyncSession):
         self._db = db
         self.users = UserRepository(db)
 
-    async def update(self, *, data: UserUpdate, user: User) -> UserResponse:
+    async def get_users(self) -> list[UserResponse]:
+        return await self.users.get_all()
+
+    async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
         update_data = data.model_dump(exclude_unset=True)
 
         db_user = User(**user.model_dump())

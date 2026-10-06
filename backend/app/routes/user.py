@@ -1,10 +1,10 @@
 from fastapi import APIRouter, status
 
-from app.core.dependencies import CurrentUser
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest
 
 from app.services.user import UserService
 
+from app.core.dependencies import CurrentUser, CurrentAdmin
 from app.core.dependencies import DbSession
 
 user_router = APIRouter(prefix="/users", tags=["users"])
@@ -40,3 +40,6 @@ async def change_password(data: ChangePasswordRequest, current_user: CurrentUser
 
 
 ############## Admin routes ##################
+@admin_router.get("/", response_model=list[UserResponse])
+async def get_users(current_admin: CurrentAdmin, db: DbSession):
+    return await UserService(db).get_users()
