@@ -83,6 +83,31 @@ class UserService:
         await self.users.delete(user=db_user)
         await self._db.commit()
 
+    async def activate_by_id(self, id: int) -> UserResponse:
+        db_user = await self.users.get_by_id(user_id=id)
+                
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        if db_user.is_active == True:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User is already active"
+            )
+
+        update_data = {"is_active": True}
+
+        new_user = await self.users.update(
+            data=update_data,
+            user=db_user
+        )
+
+        await self._db.commit()
+        return UserResponse.model_validate(new_user)
+
     async def update_password(self, *, data: ChangePasswordRequest, user: UserBase) -> None:
         if not verify_password(plain_password=data.current_password.get_secret_value(), hashed_password=user.password_hash):
             raise HTTPException(
