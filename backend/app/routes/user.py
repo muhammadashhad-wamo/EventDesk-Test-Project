@@ -25,4 +25,4 @@ async def create_user(data: UserUpdate, current_user: CurrentUser):
 async def delete_current_user(
     current_user: CurrentUser
 ):
-    await UserService.delete(current_user)
+    await UserService.delete(user=current_user)
