@@ -4,7 +4,7 @@ from app.repositories.event import EventRepository
 from app.schemas.event import EventResponse
 
 
-class UserService:
+class EventService:
     def __init__(self, db: AsyncSession):
         self._db = db
         self.events = EventRepository(db)
