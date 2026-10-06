@@ -7,8 +7,6 @@ from app.schemas.user import UserUpdate
 
 from app.core.enums import UserRole
 
-from app.db.session import User
-
 
 class UserService:
     def __init__(self, db: AsyncSession):
