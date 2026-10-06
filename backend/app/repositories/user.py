@@ -8,6 +8,11 @@ class UserRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+    async def get_all(self) -> list[User]:
+        statement = select(User)
+        users = await self.db.scalars(statement)
+        return users.all()
+
     async def get_by_id(self, user_id: int) -> User | None:
         return await self.db.get(User, user_id)
 
