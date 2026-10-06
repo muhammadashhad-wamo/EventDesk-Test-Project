@@ -14,7 +14,7 @@ class UserService:
         self._db = db
         self.users = UserRepository(db)
 
-    async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
+    async def update(self, *, data: UserUpdate, user: User) -> UserResponse:
         update_data = data.model_dump(exclude_unset=True)
 
         db_user = User(**user.model_dump())
@@ -25,7 +25,7 @@ class UserService:
         )
 
         await self._db.commit()
-        return new_user
+        return UserResponse.model_validate(new_user)
 
     async def delete(self, *, user: UserBase) -> None:
         db_user = User(**user.model_dump())

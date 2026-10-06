@@ -2,9 +2,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.auth import RegisterRequest, Token
+from app.schemas.user import UserResponse
 
 from app.core.enums import UserRole
 
@@ -14,12 +14,12 @@ class AuthService:
         self.db = db
         self.users = UserRepository(db)
 
-    async def register(self, data: RegisterRequest) -> User:
+    async def register(self, data: RegisterRequest) -> UserResponse:
         if await self.users.get_by_email(data.email):
             raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
         try:
-            user = await self.users.create(
+            db_user = await self.users.create(
                 name=data.name,
                 email=data.email,
                 password_hash=hash_password(data.password.get_secret_value()),
@@ -30,7 +30,8 @@ class AuthService:
             await self.db.rollback()
             raise
 
-        return user
+        user_schema = UserResponse.model_validate(db_user)
+        return user_schema
 
     async def login(self, email: str, password: str) -> Token:
         user = await self.users.get_by_email(email.lower())
