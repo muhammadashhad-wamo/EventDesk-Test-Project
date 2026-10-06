@@ -27,6 +27,26 @@ class UserService:
         db_users = await self.users.get_all()
         return [UserResponse.model_validate(user) for user in db_users]
 
+    async def update_by_id(self, id: int, data: UserUpdate) -> UserResponse:
+        db_user = await self.users.get_by_id(user_id=id)
+        
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        update_data = data.model_dump(exclude_unset=True)
+
+        new_user = await self.users.update(
+            data=update_data,
+            user=db_user
+        )
+
+        await self._db.commit()
+        return UserResponse.model_validate(new_user)
+        
+
     async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
         update_data = data.model_dump(exclude_unset=True)
 
@@ -39,6 +59,18 @@ class UserService:
 
         await self._db.commit()
         return UserResponse.model_validate(new_user)
+
+    async def delete_by_id(self, *, id: int) -> None:
+        db_user = await self.users.get_by_id(user_id=id)
+                
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        await self.users.delete(user=db_user)
+        await self._db.commit()
 
     async def delete(self, *, user: UserBase) -> None:
         db_user = User(**user.model_dump())

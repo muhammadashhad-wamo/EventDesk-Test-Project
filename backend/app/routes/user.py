@@ -47,3 +47,11 @@ async def get_users(current_admin: CurrentAdmin, db: DbSession):
 @admin_router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
     return await UserService(db).get_by_id(id=user_id)
+
+@admin_router.patch("/{user_id}", response_model=UserResponse)
+async def update_user_by_id(user_id: int, data: UserUpdate, current_admin: CurrentAdmin, db: DbSession):
+    return await UserService(db).update_by_id(id=user_id, data=data)
+
+@admin_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user(user_id: int, current_admin: CurrentAdmin, db: DbSession):
+    await UserService(db).delete_by_id(id=user_id)
