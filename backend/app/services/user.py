@@ -12,8 +12,20 @@ class UserService:
         self._db = db
         self.users = UserRepository(db)
 
+    async def get_by_id(self, id: int) -> UserResponse:
+        db_user = await self.users.get_by_id(user_id=id)
+
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        return UserResponse.model_validate(db_user)
+
     async def get_users(self) -> list[UserResponse]:
-        return await self.users.get_all()
+        db_users = await self.users.get_all()
+        return [UserResponse.model_validate(user) for user in db_users]
 
     async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
         update_data = data.model_dump(exclude_unset=True)
