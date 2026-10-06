@@ -14,7 +14,6 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
     
-    id: int | None = None
     name: Annotated[str | None, Field(min_length=1, max_length=50)] = None
     email: EmailStr | None = None
     password: SecretStr | None = None
