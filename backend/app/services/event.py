@@ -7,7 +7,7 @@ from app.repositories.event import EventRepository
 from app.schemas.event import EventResponse, EventUpdate, EventCreate
 from app.schemas.user import UserBase
 
-from app.models.event import Event
+from app.core.enums import EventStatus
 
 
 class EventService:
@@ -66,6 +66,9 @@ class EventService:
 
         await self._db.commit()
         return EventResponse.model_validate(new_event)
+
+    async def cancel_event_by_id(self, id: int) -> EventResponse:
+        return await self.update_by_id(id=id, data=EventUpdate(status=EventStatus.CANCELLED))
 
     async def delete_by_id(self, *, id: int) -> None:
         db_event = await self.events.get_by_id(event_id=id)

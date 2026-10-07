@@ -27,7 +27,11 @@ async def get_event_by_id(event: GetViewableEvent):
 async def edit_event_by_id(data: EventUpdate, event: GetViewableEvent, db: DbSession):
     return await EventService(db).update_by_id(id=event.id, data=data)
 
-@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED,)
+@router.patch("/{event_id}/cancel", response_model=EventResponse)
+async def cancel_event_by_id(event: GetViewableEvent, db: DbSession):
+    return await EventService(db).cancel_event_by_id(id=event.id)
+
+@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(data: EventCreate, user: CurrentUser, db: DbSession,):
     return await EventService(db).create(user=user, data=data)
 
