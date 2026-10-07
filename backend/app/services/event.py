@@ -13,16 +13,16 @@ class EventService:
         self._db = db
         self.events = EventRepository(db)
 
-    async def get_published_events(self) -> list[EventResponse]:
-        db_events = await self.events.get_published()
+    async def get_published_events(self, get_deleted: bool = False) -> list[EventResponse]:
+        db_events = await self.events.get_published(get_deleted=get_deleted)
         return [EventResponse.model_validate(event) for event in db_events]
 
-    async def get_user_events(self, user: UserBase) -> list[EventResponse]:
-        db_events = await self.events.get_user_events(user_id=user.id)
+    async def get_user_events(self, user: UserBase, get_deleted: bool = False) -> list[EventResponse]:
+        db_events = await self.events.get_user_events(user_id=user.id, get_deleted=get_deleted)
         return [EventResponse.model_validate(event) for event in db_events]
 
-    async def get_all_events(self) -> list[EventResponse]:
-        db_events = await self.events.get_all_events()
+    async def get_all_events(self, get_deleted: bool = False) -> list[EventResponse]:
+        db_events = await self.events.get_all_events(get_deleted=get_deleted)
         return [EventResponse.model_validate(event) for event in db_events]
 
     async def update_by_id(self, id: int, data: EventUpdate) -> EventResponse:
