@@ -36,3 +36,8 @@ class EventRepository:
         await self.db.flush()
 
         return db_event
+
+    async def delete(self, *, event: Event) -> None:
+        db_event = await self.db.merge(event)
+        db_event.is_active = False
+        await self.db.flush()

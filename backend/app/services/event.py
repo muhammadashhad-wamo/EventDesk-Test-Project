@@ -43,3 +43,21 @@ class EventService:
 
         await self._db.commit()
         return EventResponse.model_validate(new_event)
+
+    async def delete_by_id(self, *, id: int) -> None:
+        db_event = await self.events.get_by_id(event_id=id)
+                
+        if not db_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found"
+            )
+
+        if db_event.is_active == False:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Event is already deleted"
+            )
+        
+        await self.events.delete(event=db_event)
+        await self._db.commit()
