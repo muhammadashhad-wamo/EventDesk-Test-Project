@@ -34,7 +34,7 @@ async def get_all_events(current_admin: CurrentAdmin, db: DbSession):
     return await EventService(db).get_all_events(get_deleted=True)
 
 @admin_router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_current_user(event_id: int, current_admin: CurrentAdmin, db: DbSession):
+async def delete_event_by_id(event_id: int, current_admin: CurrentAdmin, db: DbSession):
     await EventService(db).delete_by_id(id=event_id)
 
 @admin_router.get("/", response_model=list[EventResponse])
