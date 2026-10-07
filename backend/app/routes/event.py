@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from app.schemas.event import EventResponse, EventUpdate
+from app.schemas.event import EventResponse, EventUpdate, EventCreate
 
 from app.services.event import EventService
 
@@ -26,6 +26,10 @@ async def get_event_by_id(event: GetViewableEvent):
 @router.patch("/{event_id}", response_model=EventResponse)
 async def edit_event_by_id(data: EventUpdate, event: GetViewableEvent, db: DbSession):
     return await EventService(db).update_by_id(id=event.id, data=data)
+
+@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED,)
+async def create_event(data: EventCreate, user: CurrentUser, db: DbSession,):
+    return await EventService(db).create(user=user, data=data)
 
 ######### Admin routes ###############
 

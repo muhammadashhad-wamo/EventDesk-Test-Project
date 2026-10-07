@@ -4,8 +4,10 @@ from fastapi import status, HTTPException
 
 from app.repositories.event import EventRepository
 
-from app.schemas.event import EventResponse, EventUpdate
+from app.schemas.event import EventResponse, EventUpdate, EventCreate
 from app.schemas.user import UserBase
+
+from app.models.event import Event
 
 
 class EventService:
@@ -24,6 +26,27 @@ class EventService:
     async def get_all_events(self, get_deleted: bool = False) -> list[EventResponse]:
         db_events = await self.events.get_all_events(get_deleted=get_deleted)
         return [EventResponse.model_validate(event) for event in db_events]
+
+    async def create(self, user, data: EventCreate):
+        try:
+            db_event = await self.events.create(
+                organizer_id=user.id,
+                time=data.time,
+                title=data.title,
+                description=data.description,
+                status=data.status,
+                category=data.category,
+                ticket_price=data.ticket_price,
+                available_tickets_count=data.available_tickets_count,
+                is_active=True,
+            )
+            await self._db.commit()
+        except:
+            await self._db.rollback()
+            raise
+
+        event_schema = EventResponse.model_validate(db_event)
+        return event_schema
 
     async def update_by_id(self, id: int, data: EventUpdate) -> EventResponse:
         db_event = await self.events.get_by_id(event_id=id)
