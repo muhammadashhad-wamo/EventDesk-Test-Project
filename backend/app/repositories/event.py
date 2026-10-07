@@ -26,3 +26,13 @@ class EventRepository:
         statement = select(Event).options(joinedload(Event.organizer), joinedload(Event.venue))
         events = await self.db.scalars(statement)
         return events.all()
+
+    async def update(self, *, event: Event, data: dict) -> Event:
+        db_event = await self.db.merge(event)
+
+        for field, value in data.items():
+            setattr(db_event, field, value)
+
+        await self.db.flush()
+
+        return db_event

@@ -23,6 +23,17 @@ class EventBase(BaseModel):
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
 
+class EventUpdate(BaseModel):
+    model_config = ConfigDict(use_enum_values=True, from_attributes=True)
+
+    title: Annotated[str, Field(min_length=1, max_length=50)] | None = None
+    time: datetime | None = None
+    description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    status: EventStatus | None = None
+    category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
+    ticket_price: Decimal | None = None
+    available_tickets_count: Annotated[int, Field(ge=0)] | None = None
+
 class EventResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
