@@ -3,14 +3,21 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import UserRole
 from app.core.security import decode_access_token
+
 from app.db.session import get_db
+
 from app.models.user import User
+
 from app.repositories.user import UserRepository
+from app.repositories.event import EventRepository
+
 from app.schemas.user import UserBase
+from app.schemas.event import EventBase
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -53,3 +60,17 @@ def require_roles(*roles: UserRole):
 
 
 CurrentAdmin = Annotated[User, Depends(require_roles(UserRole.ADMIN))]
+
+
+async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventBase:
+    db_event = await EventRepository(db).get_by_id(event_id=event_id)
+
+    if db_event is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+    if (user.role == UserRole.USER) and (db_event.is_active == False or user.id != db_event.organizer_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view event")
+
+    return EventBase.model_validate(db_event)
+
+GetViewableEvent = Annotated[User, Depends(get_viewable_event)]
