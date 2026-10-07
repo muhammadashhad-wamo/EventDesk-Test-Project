@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.models.event import Event
 
@@ -12,16 +13,16 @@ class EventRepository:
         return await self.db.get(Event, event_id)
 
     async def get_published(self) -> list[Event]:
-        statement = select(Event).where(Event.status == "published")
+        statement = select(Event).where(Event.status == "published").options(joinedload(Event.organizer), joinedload(Event.venue))
         events = await self.db.scalars(statement)
         return events.all()
 
     async def get_user_events(self, user_id: int) -> list[Event]:
-        statement = select(Event).where(Event.organizer_id == user_id)
+        statement = select(Event).where(Event.organizer_id == user_id).options(joinedload(Event.organizer), joinedload(Event.venue))
         events = await self.db.scalars(statement)
         return events.all()
 
-    async def get_user_events(self, user_id: int) -> list[Event]:
-        statement = select(Event)
+    async def get_all_events(self) -> list[Event]:
+        statement = select(Event).options(joinedload(Event.organizer), joinedload(Event.venue))
         events = await self.db.scalars(statement)
         return events.all()
