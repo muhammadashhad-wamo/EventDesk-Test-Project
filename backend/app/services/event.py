@@ -18,3 +18,7 @@ class EventService:
     async def get_user_events(self, user: UserBase) -> list[EventResponse]:
         db_events = await self.events.get_user_events(user_id=user.id)
         return [EventResponse.model_validate(event) for event in db_events]
+
+    async def get_all_events(self) -> list[EventResponse]:
+        db_events = await self.events.get_all_events()
+        return [EventResponse.model_validate(event) for event in db_events]
