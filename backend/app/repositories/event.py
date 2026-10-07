@@ -37,12 +37,11 @@ class EventRepository:
         )
         self.db.add(event)
         await self.db.flush()
-        await self.db.refresh(event, attribute_names=["organizer", "venue"])
         return event
 
 
     async def get_by_id(self, event_id: int, get_deleted: bool = False) -> Event | None:
-        db_event = await self.db.get(Event, event_id, options=[joinedload(Event.organizer), joinedload(Event.venue)])
+        db_event = await self.db.get(Event, event_id)
         if not get_deleted and db_event.is_active == False:
             return None
         else:
@@ -50,25 +49,25 @@ class EventRepository:
 
     async def get_published(self, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).where(Event.status == "published").options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.status == "published")
         else:
-            statement = select(Event).where(Event.status == "published", Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.status == "published", Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 
     async def get_user_events(self, user_id: int, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).where(Event.organizer_id == user_id).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.organizer_id == user_id)
         else:
-            statement = select(Event).where(Event.organizer_id == user_id, Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.organizer_id == user_id, Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 
     async def get_all_events(self, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event)
         else:
-            statement = select(Event).where(Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 

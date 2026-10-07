@@ -30,9 +30,9 @@ class Event(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     organizer: Mapped["User"] = relationship(
-        back_populates="organized_events", lazy="raise"
+        back_populates="organized_events", lazy="joined"
     )
-    venue: Mapped["Venue"] = relationship(back_populates="events", lazy="raise")
+    venue: Mapped["Venue"] = relationship(back_populates="events", lazy="joined")
     bookings: Mapped[list["EventBooking"]] = relationship(
         back_populates="event", lazy="raise"
     )
