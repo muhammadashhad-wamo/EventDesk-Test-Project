@@ -44,7 +44,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 def require_roles(*roles: UserRole):
-    def checker(current_user: CurrentUser) -> User:
+    def checker(current_user: CurrentUser) -> UserBase:
         if current_user.role not in roles:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions")
         return current_user
