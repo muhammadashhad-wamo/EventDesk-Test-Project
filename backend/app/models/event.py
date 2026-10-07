@@ -15,7 +15,7 @@ class Event(Base):
     organizer_id: Mapped[int] = mapped_column(
         ForeignKey("user_account.id")
     )
-    venue_id: Mapped[int] = mapped_column(
+    venue_id: Mapped[int | None] = mapped_column(
         ForeignKey("venue.id")
     )
     time: Mapped[datetime] = mapped_column(
