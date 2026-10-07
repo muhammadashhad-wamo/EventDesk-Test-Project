@@ -15,3 +15,8 @@ class EventRepository:
         statement = select(Event).where(Event.status == "published")
         events = await self.db.scalars(statement)
         return events.all()
+
+    async def get_user_events(self, user_id: int) -> list[Event]:
+        statement = select(Event).where(Event.organizer_id == user_id)
+        events = await self.db.scalars(statement)
+        return events.all()
