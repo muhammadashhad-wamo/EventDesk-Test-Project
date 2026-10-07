@@ -14,7 +14,7 @@ class EventBase(BaseModel):
     id: int
     title: Annotated[str, Field(min_length=1, max_length=50)]
     organizer: UserResponse
-    venue: VenueResponse
+    venue: VenueResponse | None = None
     time: datetime
     description: Annotated[str, Field(min_length=1, max_length=200)]
     status: EventStatus
@@ -29,7 +29,7 @@ class EventResponse(BaseModel):
     id: int
     title: Annotated[str, Field(min_length=1, max_length=50)]
     organizer: UserResponse
-    venue: VenueResponse
+    venue: VenueResponse | None = None
     time: datetime
     description: Annotated[str, Field(min_length=1, max_length=200)]
     status: EventStatus
