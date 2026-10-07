@@ -10,7 +10,7 @@ class EventRepository:
         self.db = db
 
     async def get_by_id(self, event_id: int) -> Event | None:
-        return await self.db.get(Event, event_id).options(joinedload(Event.organizer), joinedload(Event.venue))
+        return await self.db.get(Event, event_id, options=[joinedload(Event.organizer), joinedload(Event.venue)])
 
     async def get_published(self) -> list[Event]:
         statement = select(Event).where(Event.status == "published").options(joinedload(Event.organizer), joinedload(Event.venue))
