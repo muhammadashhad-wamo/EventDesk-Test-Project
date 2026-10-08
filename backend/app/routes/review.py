@@ -26,3 +26,7 @@ async def create_review(event_id: int, data: ReviewCreate, user: CurrentUser, db
 @router.patch("/reviews/{review_id}", response_model=ReviewResponse)
 async def edit_review(review: GetEditableReview, data: ReviewUpdate, user: CurrentUser, db: DbSession):
     return await ReviewService(db).update(user=user, review=review, data=data)
+
+@router.delete("/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_review(review_id: int, review: GetEditableReview, db: DbSession):
+    await ReviewService(db).delete(review_id=review_id)

@@ -46,3 +46,7 @@ class ReviewRepository:
             setattr(merged_review, field, value)
         await self.db.flush()
         return merged_review
+
+    async def delete(self, *, review: Review) -> None:
+        await self.db.delete(review)
+        await self.db.flush()

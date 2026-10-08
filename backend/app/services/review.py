@@ -69,3 +69,13 @@ class ReviewService:
             raise
 
         return ReviewResponse.model_validate(review)
+
+    async def delete(self, *, review_id: int) -> None:
+        review = await self.reviews.get_by_id(review_id=review_id)
+
+        try:
+            await self.reviews.delete(review=review)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
