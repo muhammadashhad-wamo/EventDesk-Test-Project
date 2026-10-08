@@ -50,3 +50,15 @@ class NotificationRepository:
             .execution_options(synchronize_session=False)
         )
         await self.db.execute(statement)
+
+    async def get_owned(self, *, notification_id: int, user_id: int) -> Notification | None:
+        statement = select(Notification).where(
+            Notification.id == notification_id,
+            Notification.user_id == user_id,
+        )
+        return await self.db.scalar(statement)
+
+    async def set_read(self, *, notification: Notification, is_read: bool) -> Notification:
+        notification.is_read = is_read
+        await self.db.flush()
+        return notification

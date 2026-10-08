@@ -40,3 +40,19 @@ class NotificationService:
         except Exception:
             await self._db.rollback()
             raise
+
+    async def set_read(self, *, user_id: int, notification_id: int, is_read: bool) -> NotificationResponse:
+        notification = await self.notifications.get_owned(
+            notification_id=notification_id, user_id=user_id
+        )
+        if notification is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Notification not found")
+
+        try:
+            notification = await self.notifications.set_read(notification=notification, is_read=is_read)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return NotificationResponse.model_validate(notification)
