@@ -53,3 +53,9 @@ class UserRepository:
         db_user = await self.db.merge(user)
         db_user.is_active = False
         await self.db.flush()
+
+    async def get_active_ids(self, user_ids: list[int]) -> list[int]:
+        if not user_ids:
+            return []
+        statement = select(User.id).where(User.id.in_(user_ids), User.is_active == True)
+        return list(await self.db.scalars(statement))
