@@ -12,6 +12,23 @@ class NotificationRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+    async def create_many(self, items: list[NotificationCreate]) -> list[Notification]:
+        now = datetime.now(timezone.utc)
+        notifications = [
+            Notification(
+                user_id=item.user_id,
+                event_id=item.event_id,
+                type=item.type.value,
+                message=item.message,
+                is_read=False,
+                created_at=now,
+            )
+            for item in items
+        ]
+        self.db.add_all(notifications)
+        await self.db.flush()
+        return notifications
+
     async def get_for_user(
         self,
         *,
