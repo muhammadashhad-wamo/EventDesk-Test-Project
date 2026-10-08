@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import NotificationType
@@ -34,3 +34,10 @@ class NotificationRepository:
         statement = statement.limit(limit).offset(offset)
         notifications = await self.db.scalars(statement)
         return notifications.all()
+
+    async def count_unread(self, *, user_id: int) -> int:
+        statement = select(func.count()).select_from(Notification).where(
+            Notification.user_id == user_id,
+            Notification.is_read == False,
+        )
+        return await self.db.scalar(statement) or 0

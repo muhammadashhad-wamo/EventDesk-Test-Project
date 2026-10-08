@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import NotificationType
 from app.repositories.notification import NotificationRepository
-from app.schemas.notification import NotificationResponse
+from app.schemas.notification import NotificationResponse, UnreadCountResponse
 
 
 class NotificationService:
@@ -28,3 +28,7 @@ class NotificationService:
             offset=offset,
         )
         return [NotificationResponse.model_validate(n) for n in db_notifications]
+
+    async def get_unread_count(self, *, user_id: int) -> UnreadCountResponse:
+        count = await self.notifications.count_unread(user_id=user_id)
+        return UnreadCountResponse(unread_count=count)

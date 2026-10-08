@@ -21,3 +21,6 @@ class NotificationResponse(BaseModel):
     event_id: int | None
     is_read: bool
     created_at: datetime
+
+class UnreadCountResponse(BaseModel):
+    unread_count: int
