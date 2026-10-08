@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean
+from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -10,6 +10,9 @@ from app.models.tag import event_tag
 
 class Event(Base):
     __tablename__ = "event"
+    __table_args__ = (
+        CheckConstraint("available_tickets_count >= 0", name="ck_event_available_tickets_non_negative"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     organizer_id: Mapped[int] = mapped_column(
