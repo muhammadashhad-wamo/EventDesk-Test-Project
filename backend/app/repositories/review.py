@@ -39,3 +39,9 @@ class ReviewRepository:
         self.db.add(review)
         await self.db.flush()
         return review
+
+    async def update(self, *, review: Review, data: dict) -> Review:
+        for field, value in data.items():
+            setattr(review, field, value)
+        await self.db.flush()
+        return review

@@ -6,7 +6,9 @@ from app.repositories.review import ReviewRepository
 from app.repositories.booking import BookingRepository
 from app.schemas.review import (
     ReviewResponse,
-    ReviewCreate
+    ReviewCreate,
+    ReviewUpdate,
+    ReviewBase
 )
 from sqlalchemy.exc import IntegrityError
 from app.schemas.user import UserBase
@@ -49,6 +51,18 @@ class ReviewService:
         except IntegrityError:
             await self._db.rollback()
             raise HTTPException(status.HTTP_409_CONFLICT, "You have already reviewed this event")
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return ReviewResponse.model_validate(review)
+
+    async def update(self, *, user: UserBase, review: ReviewBase, data: ReviewUpdate) -> ReviewResponse:
+        update_data = data.model_dump(exclude_unset=True)
+
+        try:
+            review = await self.reviews.update(review=review, data=update_data)
+            await self._db.commit()
         except Exception:
             await self._db.rollback()
             raise
