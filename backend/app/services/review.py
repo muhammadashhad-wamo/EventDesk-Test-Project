@@ -58,6 +58,7 @@ class ReviewService:
         return ReviewResponse.model_validate(review)
 
     async def update(self, *, user: UserBase, review: ReviewBase, data: ReviewUpdate) -> ReviewResponse:
+        review = await self.reviews.get_by_id(review_id=review.id)
         update_data = data.model_dump(exclude_unset=True)
 
         try:

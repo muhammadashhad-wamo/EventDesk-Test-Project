@@ -41,7 +41,8 @@ class ReviewRepository:
         return review
 
     async def update(self, *, review: Review, data: dict) -> Review:
+        merged_review = await self.db.merge(review)
         for field, value in data.items():
-            setattr(review, field, value)
+            setattr(merged_review, field, value)
         await self.db.flush()
-        return review
+        return merged_review
