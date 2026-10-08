@@ -70,7 +70,7 @@ async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) ->
     if db_event is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
 
-    if (user.role == UserRole.USER) and (db_event.is_active == False or (user.id != db_event.organizer_id and db_event.status not in (EventStatus.PUBLISHED))):
+    if (user.role == UserRole.USER) and (db_event.is_active == False or (user.id != db_event.organizer_id and db_event.status not in (EventStatus.PUBLISHED,))):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view event")
 
     return EventBase.model_validate(db_event)
