@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean, CheckConstraint
+from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean, CheckConstraint, Boolean, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -31,6 +31,9 @@ class Event(Base):
     ticket_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     available_tickets_count: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    reminder_sent: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false(), nullable=False
+    )
 
     organizer: Mapped["User"] = relationship(
         back_populates="organized_events", lazy="joined"
