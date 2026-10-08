@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import status, HTTPException
+from fastapi import status, HTTPException, BackgroundTasks
 
 from app.repositories.event import EventRepository
 
@@ -8,6 +8,8 @@ from app.schemas.event import EventResponse, EventUpdate, EventCreate
 from app.schemas.user import UserBase
 
 from app.core.enums import EventStatus
+
+from app.tasks.notifications import event_cancelled
 
 
 class EventService:
@@ -67,7 +69,22 @@ class EventService:
         await self._db.commit()
         return EventResponse.model_validate(new_event)
 
-    async def cancel_event_by_id(self, id: int) -> EventResponse:
+    async def cancel_event_by_id(self, id: int, background: BackgroundTasks) -> EventResponse:
+        db_event = await self.events.get_by_id(event_id=id)
+
+        if not db_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found"
+            )
+
+        if db_event.status in (EventStatus.CANCELLED.value, EventStatus.COMPLETED.value):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Event is already {db_event.status}"
+            )
+
+        background.add_task(event_cancelled, event_id=id)
         return await self.update_by_id(id=id, data=EventUpdate(status=EventStatus.CANCELLED))
 
     async def delete_by_id(self, *, id: int) -> None:

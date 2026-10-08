@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 
 from datetime import datetime, timezone
 
@@ -9,6 +9,10 @@ from app.repositories.event import EventRepository
 from app.schemas.booking import BookingResponse, BookingCreate
 
 from app.core.enums import EventStatus
+
+from app.tasks.notifications import booking_confirmed, booking_cancelled
+
+from app.realtime.manager import manager
 
 
 class BookingService:
@@ -21,7 +25,7 @@ class BookingService:
         db_bookings = await self.bookings.get_user_bookings(user_id=user_id)
         return [BookingResponse.model_validate(b) for b in db_bookings]
 
-    async def book(self, *, user_id: int, event_id: int, data: BookingCreate) -> BookingResponse:
+    async def book(self, *, user_id: int, event_id: int, data: BookingCreate, background: BackgroundTasks) -> BookingResponse:
         try:
             event = await self.events.get_by_id_for_update(event_id)
 
@@ -60,14 +64,30 @@ class BookingService:
                     price_at_booking=event.ticket_price,
                 )
 
+            event_title = event.title
+            available = event.available_tickets_count
+
             await self._db.commit()
         except Exception:
             await self._db.rollback()
             raise
 
+        background.add_task(
+            booking_confirmed,
+            user_id=user_id,
+            event_id=event_id,
+            event_title=event_title,
+            tickets_count=data.tickets_count,
+        )
+        background.add_task(
+            manager.broadcast_to_event,
+            event_id,
+            {"type": "tickets_updated", "event_id": event_id, "available_tickets_count": available},
+        )
+
         return BookingResponse.model_validate(booking)
 
-    async def cancel(self, *, user_id: int, event_id: int) -> BookingResponse:
+    async def cancel(self, *, user_id: int, event_id: int, background: BackgroundTasks) -> BookingResponse:
         try:
             event = await self.events.get_by_id_for_update(event_id)
             if event is None:
@@ -89,9 +109,24 @@ class BookingService:
             event.available_tickets_count += booking.tickets_count
             await self.bookings.deactivate(booking=booking)
 
+            event_title = event.title
+            available = event.available_tickets_count
+
             await self._db.commit()
         except Exception:
             await self._db.rollback()
             raise
+
+        background.add_task(
+            booking_cancelled,
+            user_id=user_id,
+            event_id=event_id,
+            event_title=event_title,
+        )
+        background.add_task(
+            manager.broadcast_to_event,
+            event_id,
+            {"type": "tickets_updated", "event_id": event_id, "available_tickets_count": available},
+        )
 
         return BookingResponse.model_validate(booking)

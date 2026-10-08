@@ -6,6 +6,7 @@ from app.models.review_reply import ReviewReply
 from app.models.tag import Tag, event_tag
 from app.models.user import User
 from app.models.venue import Venue
+from app.models.notification import Notification
 
 __all__ = [
     "AuditLog",
@@ -17,4 +18,5 @@ __all__ = [
     "User",
     "Venue",
     "event_tag",
+    "Notification"
 ]

@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.event import EventRepository
@@ -17,6 +17,8 @@ from app.schemas.user import UserBase
 
 from app.core.enums import UserRole
 
+from app.tasks.notifications import new_review, review_mentions
+
 
 class ReviewService:
     def __init__(self, db: AsyncSession):
@@ -32,7 +34,7 @@ class ReviewService:
 
         return [ReviewResponse.model_validate(review) for review in event.reviews]
 
-    async def create(self, *, user: UserBase, event_id: int, data: ReviewCreate) -> ReviewResponse:
+    async def create(self, *, user: UserBase, event_id: int, data: ReviewCreate, background: BackgroundTasks) -> ReviewResponse:
         event = await self.events.get_by_id(event_id=event_id)
         if event is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
@@ -43,6 +45,8 @@ class ReviewService:
 
         if await self.reviews.exists_for_user_and_event(user_id=user.id, event_id=event_id):
             raise HTTPException(status.HTTP_409_CONFLICT, "You have already reviewed this event")
+
+        organizer_id, event_title = event.organizer_id, event.title
 
         try:
             review = await self.reviews.create(
@@ -58,6 +62,23 @@ class ReviewService:
         except Exception:
             await self._db.rollback()
             raise
+
+        if organizer_id != user.id:
+            background.add_task(
+                new_review,
+                organizer_id=organizer_id,
+                event_id=event_id,
+                event_title=event_title,
+                stars_count=data.stars_count,
+            )
+        if data.mentioned_user_ids:
+            background.add_task(
+                review_mentions,
+                author_id=user.id,
+                user_ids=data.mentioned_user_ids,
+                event_id=event_id,
+                event_title=event_title,
+            )
 
         return ReviewResponse.model_validate(review)
 

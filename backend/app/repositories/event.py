@@ -1,11 +1,14 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import lazyload, selectinload
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
+from app.core.enums import EventStatus
 from app.models.event import Event
+
+_LOAD_ATTENDEES = selectinload(Event.bookings)
 
 
 class EventRepository:
@@ -109,3 +112,37 @@ class EventRepository:
         db_event = await self.db.merge(event)
         db_event.is_active = False
         await self.db.flush()
+
+    async def get_by_id_with_bookings(self, event_id: int) -> Event | None:
+        statement = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(lazyload("*"), _LOAD_ATTENDEES)
+        )
+        return await self.db.scalar(statement)
+
+    async def claim_due_for_reminder(self, *, now: datetime, lead_time: timedelta) -> list[Event]:
+        statement = (
+            select(Event)
+            .where(
+                Event.is_active == True,
+                Event.status == EventStatus.PUBLISHED.value,
+                Event.reminder_sent == False,
+                Event.time > now,
+                Event.time <= now + lead_time,
+            )
+            .options(lazyload("*"), _LOAD_ATTENDEES)
+            .with_for_update(skip_locked=True)
+        )
+        events = await self.db.scalars(statement)
+        return events.all()
+
+    async def mark_past_as_completed(self, *, now: datetime) -> int:
+        statement = (
+            update(Event)
+            .where(Event.status == EventStatus.PUBLISHED.value, Event.time <= now)
+            .values(status=EventStatus.COMPLETED.value)
+            .execution_options(synchronize_session=False)
+        )
+        result = await self.db.execute(statement)
+        return result.rowcount

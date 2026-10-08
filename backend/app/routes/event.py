@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks
 
 from app.schemas.event import EventResponse, EventUpdate, EventCreate
 
@@ -28,8 +28,8 @@ async def edit_event_by_id(data: EventUpdate, event: GetEditableEvent, db: DbSes
     return await EventService(db).update_by_id(id=event.id, data=data)
 
 @router.patch("/{event_id}/cancel", response_model=EventResponse)
-async def cancel_event_by_id(event: GetEditableEvent, db: DbSession):
-    return await EventService(db).cancel_event_by_id(id=event.id)
+async def cancel_event_by_id(event: GetEditableEvent, db: DbSession, backgroundtasks: BackgroundTasks):
+    return await EventService(db).cancel_event_by_id(id=event.id, background=backgroundtasks)
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(data: EventCreate, user: CurrentUser, db: DbSession,):
