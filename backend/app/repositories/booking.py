@@ -1,6 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from datetime import datetime, timezone
+from decimal import Decimal
+
 from app.models.event_booking import EventBooking
 
 
@@ -21,3 +24,23 @@ class BookingRepository:
             statement = statement.where(EventBooking.is_active == True)
         bookings = await self.db.scalars(statement)
         return bookings.all()
+
+    async def create(
+        self,
+        *,
+        user_id: int,
+        event_id: int,
+        tickets_count: int,
+        price_at_booking: Decimal,
+    ) -> EventBooking:
+        booking = EventBooking(
+            user_id=user_id,
+            event_id=event_id,
+            tickets_count=tickets_count,
+            price_at_booking=price_at_booking,
+            created_at=datetime.now(timezone.utc),
+            is_active=True,
+        )
+        self.db.add(booking)
+        await self.db.flush()
+        return booking

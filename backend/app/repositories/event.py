@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import lazyload
 
 from datetime import datetime
 from decimal import Decimal
@@ -46,6 +46,20 @@ class EventRepository:
             return None
         else:
             return db_event
+
+    async def get_by_id_for_update(self, event_id: int) -> Event | None:
+        """
+        Loads the event and takes a row lock (SELECT ... FOR UPDATE) that is
+        held until the surrounding transaction commits or rolls back.
+        """
+        statement = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(lazyload("*"))
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return await self.db.scalar(statement)
 
     async def get_published(self, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
