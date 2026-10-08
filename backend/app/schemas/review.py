@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ReplyResponse(BaseModel):
@@ -23,3 +23,8 @@ class ReviewResponse(BaseModel):
     comment: str | None
     created_at: datetime
     replies: list[ReplyResponse]
+
+
+class ReviewCreate(BaseModel):
+    stars_count: int = Field(ge=1, le=5)
+    comment: str | None = Field(default=None, max_length=200)
