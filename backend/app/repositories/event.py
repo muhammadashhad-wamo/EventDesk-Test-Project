@@ -42,7 +42,7 @@ class EventRepository:
 
     async def get_by_id(self, event_id: int, get_deleted: bool = False) -> Event | None:
         db_event = await self.db.get(Event, event_id)
-        if not get_deleted and db_event.is_active == False:
+        if db_event is None or (not get_deleted and not db_event.is_active):
             return None
         else:
             return db_event
