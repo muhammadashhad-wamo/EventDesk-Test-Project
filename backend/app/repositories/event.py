@@ -37,6 +37,8 @@ class EventRepository:
         )
         self.db.add(event)
         await self.db.flush()
+        # Adding this to eager load required attributes for serialization
+        await self.db.refresh(event)
         return event
 
 
