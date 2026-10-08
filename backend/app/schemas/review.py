@@ -41,6 +41,7 @@ class ReviewResponse(BaseModel):
 class ReviewCreate(BaseModel):
     stars_count: int = Field(ge=1, le=5)
     comment: str | None = Field(default=None, max_length=200)
+    mentioned_user_ids: list[int] = Field(default_factory=list, max_length=10)
 
 class ReviewUpdate(BaseModel):
     stars_count: int | None = Field(default=None, ge=1, le=5)
