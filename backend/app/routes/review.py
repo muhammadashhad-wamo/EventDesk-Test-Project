@@ -4,7 +4,9 @@ from app.core.dependencies import DbSession, GetViewableEvent, CurrentUser, GetE
 from app.schemas.review import (
     ReviewResponse,
     ReviewCreate,
-    ReviewUpdate
+    ReviewUpdate,
+    ReplyResponse,
+    ReplyCreate
 )
 from app.services.review import ReviewService
 
@@ -30,3 +32,11 @@ async def edit_review(review: GetEditableReview, data: ReviewUpdate, user: Curre
 @router.delete("/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_review(review_id: int, review: GetEditableReview, db: DbSession):
     await ReviewService(db).delete(review_id=review_id)
+
+@router.post(
+    "/reviews/{review_id}/replies",
+    response_model=ReplyResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def reply_to_review(review_id: int, data: ReplyCreate, user: CurrentUser, db: DbSession):
+    return await ReviewService(db).reply(user=user, review_id=review_id, data=data)

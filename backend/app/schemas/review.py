@@ -12,6 +12,9 @@ class ReplyResponse(BaseModel):
     comment: str
     created_at: datetime
 
+class ReplyCreate(BaseModel):
+    comment: str = Field(min_length=1, max_length=200)
+
 class ReviewBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     

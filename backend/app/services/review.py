@@ -8,10 +8,14 @@ from app.schemas.review import (
     ReviewResponse,
     ReviewCreate,
     ReviewUpdate,
-    ReviewBase
+    ReviewBase,
+    ReplyCreate,
+    ReplyResponse
 )
 from sqlalchemy.exc import IntegrityError
 from app.schemas.user import UserBase
+
+from app.core.enums import UserRole
 
 
 class ReviewService:
@@ -79,3 +83,24 @@ class ReviewService:
         except Exception:
             await self._db.rollback()
             raise
+
+    async def reply(self, *, user: UserBase, review_id: int, data: ReplyCreate) -> ReplyResponse:
+        review = await self.reviews.get_by_id(review_id)
+        if review is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
+
+        if user.role != UserRole.ADMIN and review.event.organizer_id != user.id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the event organizer can reply to this review")
+
+        try:
+            reply = await self.reviews.add_reply(
+                review=review,
+                user_id=user.id,
+                comment=data.comment,
+            )
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return ReplyResponse.model_validate(reply)

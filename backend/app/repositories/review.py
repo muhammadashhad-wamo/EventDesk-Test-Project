@@ -50,3 +50,13 @@ class ReviewRepository:
     async def delete(self, *, review: Review) -> None:
         await self.db.delete(review)
         await self.db.flush()
+
+    async def add_reply(self, *, review: Review, user_id: int, comment: str) -> ReviewReply:
+        reply = ReviewReply(
+            user_id=user_id,
+            comment=comment,
+            created_at=datetime.now(timezone.utc),
+        )
+        review.replies.append(reply)
+        await self.db.flush()
+        return reply
