@@ -20,9 +20,9 @@ class Review(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="reviews", lazy="raise")
-    event: Mapped["Event"] = relationship(back_populates="reviews", lazy="raise")
+    event: Mapped["Event"] = relationship(back_populates="reviews", lazy="joined")
     replies: Mapped[list["ReviewReply"]] = relationship(
-        back_populates="review", lazy="raise"
+        back_populates="review", lazy="selectin", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
