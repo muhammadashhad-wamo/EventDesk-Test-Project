@@ -66,3 +66,32 @@ class BookingService:
             raise
 
         return BookingResponse.model_validate(booking)
+
+    async def cancel(self, *, user_id: int, event_id: int) -> BookingResponse:
+        try:
+            event = await self.events.get_by_id_for_update(event_id)
+            if event is None:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+            booking = await self.bookings.get(user_id=user_id, event_id=event_id)
+            if booking is None:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking not found")
+
+            if not booking.is_active:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Booking is already cancelled")
+
+            if event.time <= datetime.now(timezone.utc):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    "Cannot cancel a booking for an event that has already started",
+                )
+
+            event.available_tickets_count += booking.tickets_count
+            await self.bookings.deactivate(booking=booking)
+
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return BookingResponse.model_validate(booking)

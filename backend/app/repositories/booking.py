@@ -44,3 +44,8 @@ class BookingRepository:
         self.db.add(booking)
         await self.db.flush()
         return booking
+
+    async def deactivate(self, *, booking: EventBooking) -> EventBooking:
+        booking.is_active = False
+        await self.db.flush()
+        return booking

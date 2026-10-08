@@ -18,3 +18,7 @@ async def get_my_bookings(user: CurrentUser, db: DbSession):
 )
 async def book_tickets(event_id: int, data: BookingCreate, user: CurrentUser, db: DbSession):
     return await BookingService(db).book(user_id=user.id, event_id=event_id, data=data)
+
+@router.patch("/events/{event_id}/bookings/me/cancel", response_model=BookingResponse)
+async def cancel_my_booking(event_id: int, user: CurrentUser, db: DbSession):
+    return await BookingService(db).cancel(user_id=user.id, event_id=event_id)
