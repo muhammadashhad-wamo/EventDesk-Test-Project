@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Integer, func
+from sqlalchemy import ForeignKey, String, Integer, func, CheckConstraint, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -7,6 +7,11 @@ from datetime import datetime
 
 class Review(Base):
     __tablename__ = "review"
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_review_user_event"),
+        CheckConstraint("stars_count BETWEEN 1 AND 5", name="ck_review_stars_range"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
