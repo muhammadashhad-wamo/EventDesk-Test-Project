@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks
 
 from app.core.dependencies import CurrentAdmin, CurrentUser, DbSession
 from app.schemas.booking import BookingResponse, BookingCreate
@@ -17,12 +17,12 @@ async def get_my_bookings(user: CurrentUser, db: DbSession):
     response_model=BookingResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def book_tickets(event_id: int, data: BookingCreate, user: CurrentUser, db: DbSession):
-    return await BookingService(db).book(user_id=user.id, event_id=event_id, data=data)
+async def book_tickets(event_id: int, data: BookingCreate, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
+    return await BookingService(db).book(user_id=user.id, event_id=event_id, data=data, background=background_tasks)
 
 @router.patch("/events/{event_id}/bookings/me/cancel", response_model=BookingResponse)
-async def cancel_my_booking(event_id: int, user: CurrentUser, db: DbSession):
-    return await BookingService(db).cancel(user_id=user.id, event_id=event_id)
+async def cancel_my_booking(event_id: int, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
+    return await BookingService(db).cancel(user_id=user.id, event_id=event_id, background=background_tasks)
 
 
 ######### Admin routes ###############
@@ -31,5 +31,5 @@ async def cancel_my_booking(event_id: int, user: CurrentUser, db: DbSession):
     "/events/{event_id}/bookings/{user_id}/cancel",
     response_model=BookingResponse,
 )
-async def admin_cancel_booking(event_id: int, user_id: int, current_admin: CurrentAdmin, db: DbSession):
-    return await BookingService(db).cancel(user_id=user_id, event_id=event_id)
+async def admin_cancel_booking(event_id: int, user_id: int, current_admin: CurrentAdmin, db: DbSession, background_tasks: BackgroundTasks):
+    return await BookingService(db).cancel(user_id=user_id, event_id=event_id, background=background_tasks)
