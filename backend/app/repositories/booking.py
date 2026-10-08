@@ -47,6 +47,20 @@ class BookingRepository:
         await self.db.refresh(booking)
         return booking
 
+    async def reactivate(
+        self,
+        *,
+        booking: EventBooking,
+        tickets_count: int,
+        price_at_booking: Decimal,
+    ) -> EventBooking:
+        booking.tickets_count = tickets_count
+        booking.price_at_booking = price_at_booking
+        booking.created_at = datetime.now(timezone.utc)
+        booking.is_active = True
+        await self.db.flush()
+        return booking
+
     async def deactivate(self, *, booking: EventBooking) -> EventBooking:
         booking.is_active = False
         await self.db.flush()
