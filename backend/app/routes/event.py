@@ -24,12 +24,12 @@ async def get_event_by_id(event: GetViewableEvent):
     return event
 
 @router.patch("/{event_id}", response_model=EventResponse)
-async def edit_event_by_id(data: EventUpdate, event: GetEditableEvent, db: DbSession):
-    return await EventService(db).update_by_id(id=event.id, data=data)
+async def edit_event_by_id(data: EventUpdate, event: GetEditableEvent, db: DbSession, user: CurrentUser):
+    return await EventService(db).update_by_id(id=event.id, data=data, actor=user)
 
 @router.patch("/{event_id}/cancel", response_model=EventResponse)
-async def cancel_event_by_id(event: GetEditableEvent, db: DbSession, backgroundtasks: BackgroundTasks):
-    return await EventService(db).cancel_event_by_id(id=event.id, background=backgroundtasks)
+async def cancel_event_by_id(event: GetEditableEvent, db: DbSession, backgroundtasks: BackgroundTasks, user: CurrentUser):
+    return await EventService(db).cancel_event_by_id(id=event.id, background=backgroundtasks, actor=user)
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(data: EventCreate, user: CurrentUser, db: DbSession,):
@@ -46,5 +46,5 @@ async def delete_event_by_id(event_id: int, current_admin: CurrentAdmin, db: DbS
     await EventService(db).delete_by_id(id=event_id)
 
 @admin_router.get("/published", response_model=list[EventResponse])
-async def admin_get_published_events(db: DbSession):
+async def admin_get_published_events(current_admin: CurrentAdmin, db: DbSession):
     return await EventService(db).get_published_events(get_deleted=True)
