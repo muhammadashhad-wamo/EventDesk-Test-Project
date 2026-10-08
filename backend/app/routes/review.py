@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks
 
 from app.core.dependencies import DbSession, GetViewableEvent, CurrentUser, GetEditableReview
 from app.schemas.review import (
@@ -22,8 +22,8 @@ async def get_event_reviews(event: GetViewableEvent, db: DbSession):
     response_model=ReviewResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_review(event_id: int, data: ReviewCreate, user: CurrentUser, db: DbSession):
-    return await ReviewService(db).create(user=user, event_id=event_id, data=data)
+async def create_review(event_id: int, data: ReviewCreate, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
+    return await ReviewService(db).create(user=user, event_id=event_id, data=data, background=background_tasks)
 
 @router.patch("/reviews/{review_id}", response_model=ReviewResponse)
 async def edit_review(review: GetEditableReview, data: ReviewUpdate, user: CurrentUser, db: DbSession):
