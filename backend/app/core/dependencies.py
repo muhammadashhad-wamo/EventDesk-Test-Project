@@ -19,6 +19,8 @@ from app.repositories.event import EventRepository
 from app.schemas.user import UserBase
 from app.schemas.event import EventBase
 
+from app.core.enums import EventStatus
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
@@ -47,7 +49,7 @@ async def get_current_user(
     return UserBase.model_validate(user)
 
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUser = Annotated[UserBase, Depends(get_current_user)]
 
 
 def require_roles(*roles: UserRole):
@@ -59,7 +61,7 @@ def require_roles(*roles: UserRole):
     return checker
 
 
-CurrentAdmin = Annotated[User, Depends(require_roles(UserRole.ADMIN))]
+CurrentAdmin = Annotated[UserBase, Depends(require_roles(UserRole.ADMIN))]
 
 
 async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventBase:
@@ -68,9 +70,23 @@ async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) ->
     if db_event is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
 
-    if (user.role == UserRole.USER) and (db_event.is_active == False or user.id != db_event.organizer_id):
+    if (user.role == UserRole.USER) and (db_event.is_active == False or (user.id != db_event.organizer_id and db_event.status not in (EventStatus.PUBLISHED,))):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view event")
 
     return EventBase.model_validate(db_event)
 
-GetViewableEvent = Annotated[User, Depends(get_viewable_event)]
+GetViewableEvent = Annotated[EventBase, Depends(get_viewable_event)]
+
+
+async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventBase:
+    db_event = await EventRepository(db).get_by_id(event_id=event_id)
+
+    if db_event is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+    if (user.role == UserRole.USER) and (db_event.is_active == False or user.id != db_event.organizer_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to edit event")
+
+    return EventBase.model_validate(db_event)
+
+GetEditableEvent = Annotated[EventBase, Depends(get_editable_event)]

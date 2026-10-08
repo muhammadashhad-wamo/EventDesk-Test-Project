@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import lazyload
 
 from datetime import datetime
 from decimal import Decimal
@@ -37,38 +37,51 @@ class EventRepository:
         )
         self.db.add(event)
         await self.db.flush()
-        await self.db.refresh(event, attribute_names=["organizer", "venue"])
         return event
 
 
     async def get_by_id(self, event_id: int, get_deleted: bool = False) -> Event | None:
-        db_event = await self.db.get(Event, event_id, options=[joinedload(Event.organizer), joinedload(Event.venue)])
-        if not get_deleted and db_event.is_active == False:
+        db_event = await self.db.get(Event, event_id)
+        if db_event is None or (not get_deleted and not db_event.is_active):
             return None
         else:
             return db_event
 
+    async def get_by_id_for_update(self, event_id: int) -> Event | None:
+        """
+        Loads the event and takes a row lock (SELECT ... FOR UPDATE) that is
+        held until the surrounding transaction commits or rolls back.
+        """
+        statement = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(lazyload("*"))
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return await self.db.scalar(statement)
+
     async def get_published(self, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).where(Event.status == "published").options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.status == "published")
         else:
-            statement = select(Event).where(Event.status == "published", Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.status == "published", Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 
     async def get_user_events(self, user_id: int, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).where(Event.organizer_id == user_id).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.organizer_id == user_id)
         else:
-            statement = select(Event).where(Event.organizer_id == user_id, Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.organizer_id == user_id, Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 
     async def get_all_events(self, get_deleted: bool = False) -> list[Event]:
         if get_deleted:
-            statement = select(Event).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event)
         else:
-            statement = select(Event).where(Event.is_active == True).options(joinedload(Event.organizer), joinedload(Event.venue))
+            statement = select(Event).where(Event.is_active == True)
         events = await self.db.scalars(statement)
         return events.all()
 
