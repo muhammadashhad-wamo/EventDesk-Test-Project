@@ -32,3 +32,11 @@ class NotificationService:
     async def get_unread_count(self, *, user_id: int) -> UnreadCountResponse:
         count = await self.notifications.count_unread(user_id=user_id)
         return UnreadCountResponse(unread_count=count)
+
+    async def mark_all_read(self, *, user_id: int) -> None:
+        try:
+            await self.notifications.mark_all_read(user_id=user_id)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise

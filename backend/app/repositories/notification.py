@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import NotificationType
@@ -41,3 +41,12 @@ class NotificationRepository:
             Notification.is_read == False,
         )
         return await self.db.scalar(statement) or 0
+
+    async def mark_all_read(self, *, user_id: int) -> None:
+        statement = (
+            update(Notification)
+            .where(Notification.user_id == user_id, Notification.is_read == False)
+            .values(is_read=True)
+            .execution_options(synchronize_session=False)
+        )
+        await self.db.execute(statement)

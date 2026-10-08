@@ -28,3 +28,7 @@ async def get_my_notifications(
 @router.get("/unread-count", response_model=UnreadCountResponse)
 async def get_unread_count(user: CurrentUser, db: DbSession):
     return await NotificationService(db).get_unread_count(user_id=user.id)
+
+@router.patch("/read-all", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_all_read(user: CurrentUser, db: DbSession):
+    await NotificationService(db).mark_all_read(user_id=user.id)
