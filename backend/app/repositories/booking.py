@@ -43,6 +43,8 @@ class BookingRepository:
         )
         self.db.add(booking)
         await self.db.flush()
+        # Adding this to eager load required attributes for serialization
+        await self.db.refresh(booking)
         return booking
 
     async def deactivate(self, *, booking: EventBooking) -> EventBooking:

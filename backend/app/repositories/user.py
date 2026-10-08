@@ -30,6 +30,8 @@ class UserRepository:
         )
         self.db.add(user)
         await self.db.flush()
+        # Adding this to eager load required attributes for serialization
+        await self.db.refresh(user)
         return user
 
     async def update(self, *, user: User, data: dict) -> User:
