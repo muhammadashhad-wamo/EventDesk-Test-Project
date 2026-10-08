@@ -15,6 +15,7 @@ from app.models.user import User
 
 from app.repositories.user import UserRepository
 from app.repositories.event import EventRepository
+from app.repositories.review import ReviewRepository
 
 from app.schemas.user import UserBase
 from app.schemas.event import EventBase
@@ -90,3 +91,13 @@ async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) ->
     return EventBase.model_validate(db_event)
 
 GetEditableEvent = Annotated[EventBase, Depends(get_editable_event)]
+
+async def get_modifiable_review(self, *, user: CurrentUser, review_id: int, db: DbSession):
+    review = await ReviewRepository(db).get_by_id(review_id)
+    if review is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
+
+    if user.role == UserRole.ADMIN or review.user_id == user.id:
+        return review
+        
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to modify this review")
