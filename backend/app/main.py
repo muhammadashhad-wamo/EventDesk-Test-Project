@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 
-from app.routes import auth, user, event, booking, review
+from app.routes import auth, user, event, booking, review, notification
 
 
 app = FastAPI(title=settings.APP_NAME)
@@ -16,3 +16,4 @@ app.include_router(event.admin_router)
 app.include_router(booking.router)
 app.include_router(booking.admin_router)
 app.include_router(review.router)
+app.include_router(notification.router)

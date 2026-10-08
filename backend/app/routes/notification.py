@@ -1,0 +1,26 @@
+from fastapi import APIRouter, Query, status
+
+from app.core.dependencies import CurrentUser, DbSession
+from app.core.enums import NotificationType
+from app.schemas.notification import NotificationResponse
+from app.services.notification import NotificationService
+
+router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+
+@router.get("/", response_model=list[NotificationResponse])
+async def get_my_notifications(
+    user: CurrentUser,
+    db: DbSession,
+    notification_type: NotificationType | None = Query(default=None, alias="type"),
+    is_read: bool | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    return await NotificationService(db).get_my_notifications(
+        user_id=user.id,
+        notification_type=notification_type,
+        is_read=is_read,
+        limit=limit,
+        offset=offset,
+    )
