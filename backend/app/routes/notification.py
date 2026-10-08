@@ -38,3 +38,9 @@ async def mark_read(notification_id: int, user: CurrentUser, db: DbSession):
     return await NotificationService(db).set_read(
         user_id=user.id, notification_id=notification_id, is_read=True
     )
+
+@router.patch("/{notification_id}/unread", response_model=NotificationResponse)
+async def mark_unread(notification_id: int, user: CurrentUser, db: DbSession):
+    return await NotificationService(db).set_read(
+        user_id=user.id, notification_id=notification_id, is_read=False
+    )
