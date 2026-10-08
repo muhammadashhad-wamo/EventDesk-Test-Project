@@ -5,7 +5,7 @@ from app.schemas.booking import BookingResponse, BookingCreate
 from app.services.booking import BookingService
 
 router = APIRouter(tags=["bookings"])
-admin_router = APIRouter(tags=["bookings", "admin"])
+admin_router = APIRouter(prefix="/admin", tags=["bookings", "admin"])
 
 
 @router.get("/bookings/me", response_model=list[BookingResponse])
