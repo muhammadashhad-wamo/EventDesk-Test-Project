@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Integer, func
+from sqlalchemy import ForeignKey, String, Integer, func, CheckConstraint, UniqueConstraint, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -7,6 +7,11 @@ from datetime import datetime
 
 class Review(Base):
     __tablename__ = "review"
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_review_user_event"),
+        CheckConstraint("stars_count BETWEEN 1 AND 5", name="ck_review_stars_range"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
@@ -17,12 +22,12 @@ class Review(Base):
     )
     stars_count: Mapped[int] = mapped_column(Integer, nullable=False)
     comment: Mapped[str | None] = mapped_column(String(200))
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="reviews", lazy="raise")
-    event: Mapped["Event"] = relationship(back_populates="reviews", lazy="raise")
+    event: Mapped["Event"] = relationship(back_populates="reviews", lazy="joined")
     replies: Mapped[list["ReviewReply"]] = relationship(
-        back_populates="review", lazy="raise"
+        back_populates="review", lazy="selectin", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

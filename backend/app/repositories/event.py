@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import lazyload
+from sqlalchemy.orm import lazyload, selectinload
 
 from datetime import datetime
 from decimal import Decimal
@@ -48,6 +48,14 @@ class EventRepository:
             return None
         else:
             return db_event
+
+    async def get_by_id_with_reviews(self, event_id: int) -> Event | None:
+        statement = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(selectinload(Event.reviews))
+        )
+        return await self.db.scalar(statement)
 
     async def get_by_id_for_update(self, event_id: int) -> Event | None:
         """
