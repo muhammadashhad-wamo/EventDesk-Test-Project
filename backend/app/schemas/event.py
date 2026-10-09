@@ -19,7 +19,7 @@ class EventBase(BaseModel):
     description: Annotated[str, Field(min_length=1, max_length=200)]
     status: EventStatus
     category: Annotated[str, Field(min_length=1, max_length=50)]
-    ticket_price: Decimal
+    ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
 
@@ -31,7 +31,7 @@ class EventCreate(BaseModel):
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus = EventStatus.DRAFT
     category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
-    ticket_price: Decimal
+    ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
 
 class EventUpdate(BaseModel):
@@ -42,7 +42,7 @@ class EventUpdate(BaseModel):
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus | None = None
     category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
-    ticket_price: Decimal | None = None
+    ticket_price: Annotated[Decimal, Field(ge=0)] | None = None
     available_tickets_count: Annotated[int, Field(ge=0)] | None = None
 
 class EventResponse(BaseModel):
@@ -56,6 +56,6 @@ class EventResponse(BaseModel):
     description: Annotated[str, Field(min_length=1, max_length=200)]
     status: EventStatus
     category: Annotated[str, Field(min_length=1, max_length=50)]
-    ticket_price: Decimal
+    ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
