@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.booking import BookingRepository
 from app.repositories.event import EventRepository
+from app.repositories.audit_log import AuditLogRepository
 from app.schemas.booking import BookingResponse, BookingCreate
 
-from app.core.enums import EventStatus
+from app.core.enums import EventStatus, AuditAction, AuditEntity
 
 from app.tasks.notifications import booking_confirmed, booking_cancelled
 
@@ -20,6 +21,7 @@ class BookingService:
         self._db = db
         self.events = EventRepository(db)
         self.bookings = BookingRepository(db)
+        self.audit = AuditLogRepository(db)
 
     async def get_my_bookings(self, *, user_id: int) -> list[BookingResponse]:
         db_bookings = await self.bookings.get_user_bookings(user_id=user_id)
@@ -64,6 +66,13 @@ class BookingService:
                     price_at_booking=event.ticket_price,
                 )
 
+            await self.audit.create(
+                actor_id=user_id,
+                action=AuditAction.BOOKING_CREATED,
+                entity_type=AuditEntity.EVENT,
+                entity_id=event_id,
+            )
+
             event_title = event.title
             available = event.available_tickets_count
 
@@ -87,7 +96,7 @@ class BookingService:
 
         return BookingResponse.model_validate(booking)
 
-    async def cancel(self, *, user_id: int, event_id: int, background: BackgroundTasks) -> BookingResponse:
+    async def cancel(self, *, actor_id: int, user_id: int, event_id: int, background: BackgroundTasks) -> BookingResponse:
         try:
             event = await self.events.get_by_id_for_update(event_id)
             if event is None:
@@ -108,6 +117,13 @@ class BookingService:
 
             event.available_tickets_count += booking.tickets_count
             await self.bookings.deactivate(booking=booking)
+
+            await self.audit.create(
+                actor_id=actor_id,
+                action=AuditAction.BOOKING_CANCELLED,
+                entity_type=AuditEntity.EVENT,
+                entity_id=event_id,
+            )
 
             event_title = event.title
             available = event.available_tickets_count

@@ -19,7 +19,7 @@ class AuditLog(Base):
     entity_id: Mapped[int] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    actor: Mapped["User | None"] = relationship(lazy="raise")
+    actor: Mapped["User | None"] = relationship(lazy="joined")
 
     def __repr__(self) -> str:
         return (
