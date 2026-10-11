@@ -42,9 +42,18 @@ async def change_password(data: ChangePasswordRequest, current_user: CurrentUser
 
 
 ############## Admin routes ##################
-@admin_router.get("/", response_model=list[UserResponse])
-async def get_users(current_admin: CurrentAdmin, db: DbSession):
-    return await UserService(db).get_users()
+@router.get("/", response_model=Page[AdminUserResponse])
+async def list_users(
+    current_admin: CurrentAdmin,
+    db: DbSession,
+    pagination: Pagination,
+    search: str | None = Query(None, min_length=1, max_length=100, description="Matches name or email"),
+    role: UserRole | None = None,
+    is_active: bool | None = None,
+):
+    return await AdminUserService(db).list_users(
+        pagination=pagination, search=search, role=role, is_active=is_active
+    )
 
 @admin_router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -66,3 +66,28 @@ class UserRepository:
         user.role = role.value
         await self.db.flush()
         return user
+
+    async def search(
+        self,
+        *,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[User], int]:
+        conditions = []
+        if search:
+            conditions.append(or_(
+                User.name.icontains(search, autoescape=True),
+                User.email.icontains(search, autoescape=True),
+            ))
+        if role is not None:
+            conditions.append(User.role == role.value)
+        if is_active is not None:
+            conditions.append(User.is_active == is_active)
+
+        statement = select(User).where(*conditions).order_by(User.id).limit(limit).offset(offset)
+        users = await self.db.scalars(statement)
+        total = await self.db.scalar(select(func.count(User.id)).where(*conditions))
+        return users.all(), total or 0
