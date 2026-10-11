@@ -1,8 +1,10 @@
 from fastapi import APIRouter, status
 
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest
+from app.schemas.admin_user import RoleUpdate, AdminUserResponse
 
 from app.services.user import UserService
+from app.services.admin_user import AdminUserService
 
 from app.core.dependencies import CurrentUser, CurrentAdmin
 from app.core.dependencies import DbSession
@@ -59,3 +61,7 @@ async def activate_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbS
 @admin_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: int, current_admin: CurrentAdmin, db: DbSession):
     await UserService(db).delete_by_id(id=user_id)
+
+@admin_router.patch("/{user_id}/role", response_model=AdminUserResponse)
+async def change_user_role(user_id: int, data: RoleUpdate, current_admin: CurrentAdmin, db: DbSession):
+    return await AdminUserService(db).change_role(actor=current_admin, user_id=user_id, role=data.role)

@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 
+from app.core.enums import UserRole
+
 
 class UserRepository:
     def __init__(self, db: AsyncSession) -> None:
@@ -59,3 +61,8 @@ class UserRepository:
             return []
         statement = select(User.id).where(User.id.in_(user_ids), User.is_active == True)
         return list(await self.db.scalars(statement))
+
+    async def set_role(self, *, user: User, role: UserRole) -> User:
+        user.role = role.value
+        await self.db.flush()
+        return user
