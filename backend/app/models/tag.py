@@ -9,14 +9,14 @@ event_tag = Table(
     Column(
         "event_id",
         Integer,
-        ForeignKey("event.id"),
+        ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "tag_id",
         Integer,
-        ForeignKey("tag.id"),
-        primary_key=True
+        ForeignKey("tag.id", ondelete="CASCADE"),
+        primary_key=True,
     ),
 )
 
