@@ -58,9 +58,9 @@ class EventResponse(BaseModel):
     organizer: UserResponse
     venue: VenueResponse | None = None
     time: datetime
-    description: Annotated[str, Field(min_length=1, max_length=200)]
+    description: Annotated[str | None, Field(min_length=1, max_length=200)] = None
     status: EventStatus
-    category: Annotated[str, Field(min_length=1, max_length=50)]
+    category: Annotated[str | None, Field(min_length=1, max_length=50)] = None
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
