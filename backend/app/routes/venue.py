@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, status
 
-from app.core.dependencies import DbSession, CurrentAdmin
+from app.core.dependencies import DbSession, CurrentAdmin, CurrentUser
 from app.schemas.pagination import Page, Pagination
 from app.schemas.venue import VenueResponse, VenueCreate, VenueUpdate
 from app.services.venue import VenueService
@@ -26,13 +26,11 @@ async def list_venues(
 async def get_venue(venue_id: int, db: DbSession):
     return await VenueService(db).get_venue(venue_id=venue_id)
 
-
-######### Admin routes ###############
-
-@admin_router.post("/", response_model=VenueResponse, status_code=status.HTTP_201_CREATED)
-async def create_venue(data: VenueCreate, current_admin: CurrentAdmin, db: DbSession):
+@router.post("/", response_model=VenueResponse, status_code=status.HTTP_201_CREATED)
+async def create_venue(data: VenueCreate, current_user: CurrentUser, db: DbSession):
     return await VenueService(db).create(data=data)
 
+######### Admin routes ###############
 
 @admin_router.patch("/{venue_id}", response_model=VenueResponse)
 async def update_venue(venue_id: int, data: VenueUpdate, current_admin: CurrentAdmin, db: DbSession):
