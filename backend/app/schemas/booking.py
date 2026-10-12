@@ -15,3 +15,12 @@ class BookingResponse(BaseModel):
 
 class BookingCreate(BaseModel):
     tickets_count: int = Field(gt=0)
+
+class BookingUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+class BookingDetailResponse(BookingResponse):
+    user: BookingUserResponse

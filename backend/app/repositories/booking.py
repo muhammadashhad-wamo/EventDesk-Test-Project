@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from datetime import datetime, timezone
@@ -17,6 +17,34 @@ class BookingRepository:
             EventBooking.event_id == event_id,
         )
         return await self.db.scalar(statement)
+
+    async def search(
+        self,
+        *,
+        event_id: int | None = None,
+        user_id: int | None = None,
+        is_active: bool | None = None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[EventBooking], int]:
+        conditions = []
+        if event_id is not None:
+            conditions.append(EventBooking.event_id == event_id)
+        if user_id is not None:
+            conditions.append(EventBooking.user_id == user_id)
+        if is_active is not None:
+            conditions.append(EventBooking.is_active == is_active)
+
+        statement = (
+            select(EventBooking)
+            .where(*conditions)
+            .order_by(EventBooking.created_at.desc(), EventBooking.event_id, EventBooking.user_id)
+            .limit(limit)
+            .offset(offset)
+        )
+        bookings = await self.db.scalars(statement)
+        total = await self.db.scalar(select(func.count()).select_from(EventBooking).where(*conditions))
+        return bookings.all(), total or 0
 
     async def get_user_bookings(self, *, user_id: int, active_only: bool = True) -> list[EventBooking]:
         statement = select(EventBooking).where(EventBooking.user_id == user_id)

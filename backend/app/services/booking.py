@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.booking import BookingRepository
 from app.repositories.event import EventRepository
 from app.repositories.audit_log import AuditLogRepository
-from app.schemas.booking import BookingResponse, BookingCreate
+from app.schemas.booking import BookingResponse, BookingCreate, BookingDetailResponse
+from app.schemas.pagination import Page, PaginationParams
 
 from app.core.enums import EventStatus, AuditAction, AuditEntity
 
@@ -26,6 +27,28 @@ class BookingService:
     async def get_my_bookings(self, *, user_id: int) -> list[BookingResponse]:
         db_bookings = await self.bookings.get_user_bookings(user_id=user_id)
         return [BookingResponse.model_validate(b) for b in db_bookings]
+
+    async def list_bookings(
+        self,
+        *,
+        pagination: PaginationParams,
+        event_id: int | None = None,
+        user_id: int | None = None,
+        is_active: bool | None = None,
+    ) -> Page[BookingDetailResponse]:
+        db_bookings, total = await self.bookings.search(
+            event_id=event_id,
+            user_id=user_id,
+            is_active=is_active,
+            limit=pagination.limit,
+            offset=pagination.offset,
+        )
+        return Page[BookingDetailResponse](
+            items=[BookingDetailResponse.model_validate(b) for b in db_bookings],
+            total=total,
+            limit=pagination.limit,
+            offset=pagination.offset,
+        )
 
     async def book(self, *, user_id: int, event_id: int, data: BookingCreate, background: BackgroundTasks) -> BookingResponse:
         try:
