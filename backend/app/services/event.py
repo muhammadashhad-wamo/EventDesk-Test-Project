@@ -4,10 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import AuditAction, AuditEntity, EventStatus
 from app.models.tag import Tag
 from app.models.venue import Venue
+from app.models.category import Category
 from app.repositories.audit_log import AuditLogRepository
 from app.repositories.event import EventRepository
 from app.repositories.tag import TagRepository
 from app.repositories.venue import VenueRepository
+from app.repositories.category import CategoryRepository
 from app.schemas.event import EventCreate, EventResponse, EventUpdate
 from app.schemas.event_filters import EventFilters
 from app.schemas.pagination import Page, PaginationParams
@@ -22,6 +24,7 @@ class EventService:
         self.venues = VenueRepository(db)
         self.tags = TagRepository(db)
         self.audit = AuditLogRepository(db)
+        self.categories = CategoryRepository
 
     async def list_events(
         self,
@@ -51,6 +54,7 @@ class EventService:
 
     async def create(self, user: UserBase, data: EventCreate) -> EventResponse:
         venue = await self._get_venue(data.venue_id) if data.venue_id is not None else None
+        category = await self._get_category(data.category_id) if data.category_id is not None else None
         tags = await self._get_tags(data.tag_ids)
 
         try:
@@ -60,7 +64,7 @@ class EventService:
                 title=data.title,
                 description=data.description,
                 status=data.status,
-                category=data.category,
+                category=category,
                 ticket_price=data.ticket_price,
                 available_tickets_count=data.available_tickets_count,
                 venue=venue,
@@ -161,6 +165,9 @@ class EventService:
         set_venue = "venue_id" in update_data
         venue_id = update_data.pop("venue_id", None)
         venue = await self._get_venue(venue_id) if venue_id is not None else None
+        set_category = "category_id" in update_data
+        category_id = update_data.pop("category_id", None)
+        category = await self._get_category(category_id) if category_id is not None else None
 
         try:
             updated_event = await self.events.update(
@@ -169,6 +176,8 @@ class EventService:
                 venue=venue,
                 set_venue=set_venue,
                 tags=tags,
+                category=category,
+                set_category=set_category,
             )
             await self.audit.create(
                 actor_id=actor.id,
@@ -196,3 +205,9 @@ class EventService:
         if missing:
             raise HTTPException(status_code=422, detail=f"Unknown tag ids: {sorted(missing)}")
         return tags
+
+    async def _get_category(self, category_id: int) -> Category:
+        category = await self.categories.get_by_id(category_id)
+        if category is None:
+            raise HTTPException(status_code=422, detail="Category not found")
+        return category

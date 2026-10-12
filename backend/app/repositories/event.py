@@ -157,6 +157,8 @@ class EventRepository:
         venue: Venue | None = None,
         set_venue: bool = False,
         tags: list[Tag] | None = None,
+        category: Category | None = None,
+        set_category: bool = False,
     ) -> Event:
         db_event = await self.db.merge(event)
 
@@ -165,7 +167,10 @@ class EventRepository:
 
         if set_venue:
             db_event.venue = venue
+        if set_category:
+            db_event.category = category
         if tags is not None:
+            await self.db.refresh(db_event, attribute_names=["tags"])
             db_event.tags = tags
 
         await self.db.flush()
