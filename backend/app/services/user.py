@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User as User
 from app.repositories.user import UserRepository
-from app.schemas.user import UserUpdate, UserResponse, UserBase, ChangePasswordRequest
+from app.schemas.user import UserUpdate, UserResponse, UserBase, ChangePasswordRequest, UserLookupResponse
 from app.core.security import verify_password, hash_password
 
 
@@ -136,3 +136,7 @@ class UserService:
         db_user = User(**user.model_dump())
         await self.users.update_password(user=db_user, new_password_hash=new_password_hash)
         await self._db.commit()
+
+    async def search_active_by_name(self, *, search: str, limit: int) -> list[UserLookupResponse]:
+        db_users = await self.users.search_active_by_name(search=search, limit=limit)
+        return [UserLookupResponse.model_validate(u) for u in db_users]

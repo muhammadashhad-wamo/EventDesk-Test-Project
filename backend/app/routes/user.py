@@ -1,6 +1,7 @@
+from typing import Annotated
 from fastapi import APIRouter, status, Query
 
-from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest
+from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest, UserLookupResponse
 from app.schemas.admin_user import RoleUpdate, AdminUserResponse
 
 from app.services.user import UserService
@@ -43,6 +44,15 @@ async def delete_current_user(
 )
 async def change_password(data: ChangePasswordRequest, current_user: CurrentUser, db: DbSession):
     await UserService(db).update_password(user=current_user, data=data)
+
+@router.get("/lookup", response_model=list[UserLookupResponse])
+async def lookup_users(
+    user: CurrentUser,
+    db: DbSession,
+    search: Annotated[str, Query(min_length=2, max_length=50)],
+    limit: int = Query(10, ge=1, le=20),
+):
+    return await UserService(db).search_active_by_name(search=search, limit=limit)
 
 
 ############## Admin routes ##################

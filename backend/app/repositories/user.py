@@ -91,3 +91,13 @@ class UserRepository:
         users = await self.db.scalars(statement)
         total = await self.db.scalar(select(func.count(User.id)).where(*conditions))
         return users.all(), total or 0
+
+    async def search_active_by_name(self, *, search: str, limit: int) -> list[User]:
+        statement = (
+            select(User)
+            .where(User.is_active == True, User.name.icontains(search, autoescape=True))
+            .order_by(User.name, User.id)
+            .limit(limit)
+        )
+        users = await self.db.scalars(statement)
+        return users.all()
