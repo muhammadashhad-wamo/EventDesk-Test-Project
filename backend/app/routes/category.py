@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, status
 
 from app.core.dependencies import DbSession, CurrentAdmin
-from app.schemas.category import CategoryResponse, CategoryCreate
+from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.schemas.pagination import Page, Pagination
 from app.services.category import CategoryService
 
@@ -27,3 +27,9 @@ async def get_category(category_id: int, db: DbSession):
 @admin_router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(data: CategoryCreate, current_admin: CurrentAdmin, db: DbSession):
     return await CategoryService(db).create(data=data)
+
+@admin_router.patch("/{category_id}", response_model=CategoryResponse)
+async def update_category(
+    category_id: int, data: CategoryUpdate, current_admin: CurrentAdmin, db: DbSession
+):
+    return await CategoryService(db).rename(category_id=category_id, data=data)

@@ -7,6 +7,8 @@ CategoryName = Annotated[
     StringConstraints(strip_whitespace=True, min_length=1, max_length=50),
 ]
 
+class CategoryUpdate(BaseModel):
+    name: CategoryName
 
 class CategoryCreate(BaseModel):
     name: CategoryName

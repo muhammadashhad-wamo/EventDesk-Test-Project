@@ -41,3 +41,8 @@ class CategoryRepository:
         self.db.add(category)
         await self.db.flush()
         return category
+
+    async def rename(self, *, category: Category, name: str) -> Category:
+        category.name = name
+        await self.db.flush()
+        return category

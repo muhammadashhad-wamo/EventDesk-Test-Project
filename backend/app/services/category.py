@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from app.repositories.category import CategoryRepository
-from app.schemas.category import CategoryResponse, CategoryCreate
+from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.schemas.pagination import Page, PaginationParams
 
 
@@ -37,6 +37,27 @@ class CategoryService:
 
         try:
             category = await self.categories.create(name=data.name)
+            await self._db.commit()
+        except IntegrityError:
+            await self._db.rollback()
+            raise HTTPException(status.HTTP_409_CONFLICT, "Category already exists")
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return CategoryResponse.model_validate(category)
+
+    async def rename(self, *, category_id: int, data: CategoryUpdate) -> CategoryResponse:
+        category = await self.categories.get_by_id(category_id)
+        if category is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Category not found")
+
+        existing = await self.categories.get_by_name(data.name)
+        if existing is not None and existing.id != category.id:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Category already exists")
+
+        try:
+            category = await self.categories.rename(category=category, name=data.name)
             await self._db.commit()
         except IntegrityError:
             await self._db.rollback()
