@@ -5,6 +5,8 @@ from pwdlib import PasswordHash
 
 from app.core.config import settings
 
+import hashlib
+
 _password_hash = PasswordHash.recommended()
 
 
@@ -26,3 +28,6 @@ def create_access_token(user_id: int, role: str) -> str:
 
 def decode_access_token(token: str) -> dict:
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+def hash_refresh_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
