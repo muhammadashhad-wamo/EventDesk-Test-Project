@@ -76,3 +76,13 @@ class TokenService:
         )
         access_token = create_access_token(user_id)
         return TokenPair(access_token=access_token, refresh_token=raw_token)
+
+    async def revoke(self, *, raw_token: str) -> None:
+        try:
+            record = await self.tokens.get_by_hash(hash_refresh_token(raw_token))
+            if record is not None and record.revoked_at is None:
+                record.revoked_at = datetime.now(timezone.utc)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
