@@ -8,6 +8,7 @@ from decimal import Decimal
 from app.schemas.venue import VenueResponse
 from app.schemas.user import UserResponse
 from app.schemas.tag import TagResponse
+from app.schemas.category import CategoryResponse
 
 class EventBase(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
@@ -17,9 +18,9 @@ class EventBase(BaseModel):
     organizer: UserResponse
     venue_id: int | None = None
     time: datetime
-    description: Annotated[str, Field(min_length=1, max_length=200)]
+    description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus
-    category: Annotated[str, Field(min_length=1, max_length=50)]
+    category: CategoryResponse | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
@@ -31,7 +32,7 @@ class EventCreate(BaseModel):
     time: datetime
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus = EventStatus.DRAFT
-    category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
+    category_id: int | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     venue_id: int | None = None
@@ -44,7 +45,7 @@ class EventUpdate(BaseModel):
     time: datetime | None = None
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus | None = None
-    category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
+    category_id: int | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)] | None = None
     available_tickets_count: Annotated[int, Field(ge=0)] | None = None
     venue_id: int | None = None
@@ -60,7 +61,7 @@ class EventResponse(BaseModel):
     time: datetime
     description: Annotated[str | None, Field(min_length=1, max_length=200)] = None
     status: EventStatus
-    category: Annotated[str | None, Field(min_length=1, max_length=50)] = None
+    category: CategoryResponse | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
