@@ -54,14 +54,34 @@ async def create_event(data: EventCreate, user: CurrentUser, db: DbSession,):
 
 ######### Admin routes ###############
 
-@admin_router.get("/", response_model=list[EventResponse])
-async def get_all_events(current_admin: CurrentAdmin, db: DbSession):
-    return await EventService(db).get_all_events(get_deleted=True)
+@admin_router.get("/", response_model=Page[EventResponse])
+async def get_all_events(
+    current_admin: CurrentAdmin,
+    db: DbSession,
+    pagination: Pagination,
+    filters: EventFilterParams,
+    event_status: EventStatus | None = Query(None, alias="status"),
+    organizer_id: int | None = None,
+):
+    return await EventService(db).list_events(
+        filters=filters,
+        pagination=pagination,
+        organizer_id=organizer_id,
+        status=event_status,
+        get_deleted=True,
+    )
 
 @admin_router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_by_id(event_id: int, current_admin: CurrentAdmin, db: DbSession):
     await EventService(db).delete_by_id(id=event_id, actor=current_admin)
 
-@admin_router.get("/published", response_model=list[EventResponse])
-async def admin_get_published_events(current_admin: CurrentAdmin, db: DbSession):
-    return await EventService(db).get_published_events(get_deleted=True)
+@admin_router.get("/published", response_model=Page[EventResponse])
+async def admin_get_published_events(
+    current_admin: CurrentAdmin,
+    db: DbSession,
+    pagination: Pagination,
+    filters: EventFilterParams,
+):
+    return await EventService(db).list_events(
+        filters=filters, pagination=pagination, published_only=True, get_deleted=True
+    )
