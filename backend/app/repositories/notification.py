@@ -33,7 +33,7 @@ class NotificationRepository:
         self,
         *,
         user_id: int,
-        notification_type: NotificationType | None = None,
+        notification_types: list[NotificationType] | None = None,
         is_read: bool | None = None,
         limit: int = 50,
         offset: int = 0,
@@ -43,8 +43,10 @@ class NotificationRepository:
             .where(Notification.user_id == user_id)
             .order_by(Notification.created_at.desc(), Notification.id.desc())
         )
-        if notification_type is not None:
-            statement = statement.where(Notification.type == notification_type.value)
+        if notification_types:
+            statement = statement.where(
+                Notification.type.in_([t.value for t in notification_types])
+            )
         if is_read is not None:
             statement = statement.where(Notification.is_read == is_read)
 
