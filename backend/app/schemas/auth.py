@@ -22,7 +22,3 @@ class RegisterRequest(BaseModel):
             raise ValueError(f"Password must contain: {', '.join(errors)}.")
 
         return v
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"

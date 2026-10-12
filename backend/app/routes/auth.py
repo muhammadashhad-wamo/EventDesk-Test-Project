@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import DbSession
-from app.schemas.auth import RegisterRequest, Token
+from app.schemas.auth import RegisterRequest
+from app.schemas.token import TokenPair
 from app.schemas.user import UserResponse
 from app.services.auth import AuthService
 
@@ -16,7 +17,7 @@ async def register(data: RegisterRequest, db: DbSession):
     return await AuthService(db).register(data)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=TokenPair)
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DbSession,
