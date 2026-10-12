@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.venue import Venue
 from app.models.notification import Notification
 from app.models.refresh_token import RefreshToken
+from app.models.category import Category
 
 __all__ = [
     "AuditLog",
@@ -20,5 +21,6 @@ __all__ = [
     "Venue",
     "event_tag",
     "Notification",
-    "RefreshToken"
+    "RefreshToken",
+    "Category"
 ]

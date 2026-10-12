@@ -21,13 +21,15 @@ class Event(Base):
     venue_id: Mapped[int | None] = mapped_column(
         ForeignKey("venue.id")
     )
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("category.id", ondelete="SET NULL")
+    )
     time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True)
     )
     title: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(50), nullable=False)
-    category: Mapped[str | None] = mapped_column(String(50))
     ticket_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     available_tickets_count: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -39,6 +41,9 @@ class Event(Base):
         back_populates="organized_events", lazy="joined"
     )
     venue: Mapped["Venue"] = relationship(back_populates="events", lazy="joined")
+    category: Mapped["Category | None"] = relationship(
+        back_populates="events", lazy="joined"
+    )
     bookings: Mapped[list["EventBooking"]] = relationship(
         back_populates="event", lazy="raise"
     )
@@ -46,7 +51,7 @@ class Event(Base):
         back_populates="event", lazy="raise"
     )
     tags: Mapped[list["Tag"]] = relationship(
-        secondary=event_tag, back_populates="events", lazy="raise"
+        secondary=event_tag, back_populates="events", lazy="selectin"
     )
 
     def __repr__(self) -> str:
