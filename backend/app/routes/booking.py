@@ -48,3 +48,16 @@ async def get_event_bookings(
 )
 async def admin_cancel_booking(event_id: int, user_id: int, current_admin: CurrentAdmin, db: DbSession, background_tasks: BackgroundTasks):
     return await BookingService(db).cancel(actor_id=current_admin.id, user_id=user_id, event_id=event_id, background=background_tasks)
+
+@admin_router.get("/bookings", response_model=Page[BookingDetailResponse])
+async def admin_get_all_bookings(
+    current_admin: CurrentAdmin,
+    db: DbSession,
+    pagination: Pagination,
+    event_id: int | None = None,
+    user_id: int | None = None,
+    is_active: bool | None = None,
+):
+    return await BookingService(db).list_bookings(
+        event_id=event_id, user_id=user_id, is_active=is_active, pagination=pagination
+    )
