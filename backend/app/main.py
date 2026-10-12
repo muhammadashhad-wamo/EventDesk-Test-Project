@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 
-from app.routes import auth, user, event, booking, review, notification, ws, audit_log, tag, venue, auth_tokens
+from app.routes import auth, user, event, booking, review, notification, ws, audit_log, tag, venue, auth_tokens, category
 
 from app.tasks.jobs import start_scheduled_jobs, stop_scheduled_jobs
 
@@ -33,3 +33,5 @@ app.include_router(tag.admin_router)
 app.include_router(venue.router)
 app.include_router(venue.admin_router)
 app.include_router(auth_tokens.router)
+app.include_router(category.router)
+app.include_router(category.admin_router)
