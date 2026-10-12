@@ -11,6 +11,12 @@ class TagRepository:
     async def get_by_id(self, tag_id: int) -> Tag | None:
         return await self.db.get(Tag, tag_id)
 
+    async def get_by_ids(self, tag_ids: list[int]) -> list[Tag]:
+        if not tag_ids:
+            return []
+        tags = await self.db.scalars(select(Tag).where(Tag.id.in_(tag_ids)))
+        return tags.all()
+
     async def search(
         self,
         *,
