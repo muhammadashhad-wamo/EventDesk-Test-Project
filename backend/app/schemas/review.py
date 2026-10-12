@@ -2,6 +2,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+class ReviewUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
 
 class ReplyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -11,6 +16,7 @@ class ReplyResponse(BaseModel):
     review_id: int
     comment: str
     created_at: datetime
+    user: ReviewUserResponse
 
 class ReplyCreate(BaseModel):
     comment: str = Field(min_length=1, max_length=200)
@@ -36,6 +42,7 @@ class ReviewResponse(BaseModel):
     comment: str | None
     created_at: datetime
     replies: list[ReplyResponse]
+    user: ReviewUserResponse
 
 
 class ReviewCreate(BaseModel):
