@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.review import Review
 from app.models.review_reply import ReviewReply
+from app.models.user import User
 
 
 class ReviewRepository:
@@ -23,13 +24,13 @@ class ReviewRepository:
     async def create(
         self,
         *,
-        user_id: int,
+        user: User,
         event_id: int,
         stars_count: int,
         comment: str | None,
     ) -> Review:
         review = Review(
-            user_id=user_id,
+            user=user,
             event_id=event_id,
             stars_count=stars_count,
             comment=comment,
@@ -51,9 +52,9 @@ class ReviewRepository:
         await self.db.delete(review)
         await self.db.flush()
 
-    async def add_reply(self, *, review: Review, user_id: int, comment: str) -> ReviewReply:
+    async def add_reply(self, *, review: Review, user: User, comment: str) -> ReviewReply:
         reply = ReviewReply(
-            user_id=user_id,
+            user=user,
             comment=comment,
             created_at=datetime.now(timezone.utc),
         )

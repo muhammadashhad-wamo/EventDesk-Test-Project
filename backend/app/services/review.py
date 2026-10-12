@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.event import EventRepository
 from app.repositories.review import ReviewRepository
 from app.repositories.booking import BookingRepository
+from app.repositories.user import UserRepository
 from app.schemas.review import (
     ReviewResponse,
     ReviewCreate,
@@ -26,6 +27,7 @@ class ReviewService:
         self.events = EventRepository(db)
         self.reviews = ReviewRepository(db)
         self.bookings = BookingRepository(db)
+        self.users = UserRepository(db)
 
     async def get_event_reviews(self, *, event_id: int) -> list[ReviewResponse]:
         event = await self.events.get_by_id_with_reviews(event_id)
@@ -48,9 +50,11 @@ class ReviewService:
 
         organizer_id, event_title = event.organizer_id, event.title
 
+        db_user = await self.users.get_by_id(user.id)
+
         try:
             review = await self.reviews.create(
-                user_id=user.id,
+                user=db_user,
                 event_id=event_id,
                 stars_count=data.stars_count,
                 comment=data.comment,
@@ -124,8 +128,10 @@ class ReviewService:
         event_id = review.event_id
         event_title = review.event.title
 
+        db_user = await self.users.get_by_id(user.id)
+
         try:
-            reply = await self.reviews.add_reply(review=review, user_id=user.id, comment=data.comment)
+            reply = await self.reviews.add_reply(review=review, user=db_user, comment=data.comment)
             await self._db.commit()
         except Exception:
             await self._db.rollback()
