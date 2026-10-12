@@ -37,3 +37,7 @@ class TagRepository:
         tag.tag = name
         await self.db.flush()
         return tag
+
+    async def delete(self, * tag: Tag) -> None:
+        await self.db.delete(tag)
+        await self.db.flush()

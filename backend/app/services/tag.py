@@ -48,7 +48,7 @@ class TagService:
 
     async def rename(self, *, tag_id: int, data: TagUpdate) -> TagResponse:
         tag = await self.tags.get_by_id(tag_id)
-        
+
         if tag is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
 
@@ -68,3 +68,15 @@ class TagService:
             raise
 
         return TagResponse.model_validate(tag)
+
+    async def delete(self, *, tag_id: int) -> None:
+        tag = await self.tags.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
+
+        try:
+            await self.tags.delete(tag=tag)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise

@@ -30,3 +30,7 @@ async def create_tag(data: TagCreate, current_admin: CurrentAdmin, db: DbSession
 @admin_router.patch("/{tag_id}", response_model=TagResponse)
 async def rename_tag(tag_id: int, data: TagUpdate, current_admin: CurrentAdmin, db: DbSession):
     return await TagService(db).rename(tag_id=tag_id, data=data)
+
+@admin_router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_tag(tag_id: int, current_admin: CurrentAdmin, db: DbSession):
+    await TagService(db).delete(tag_id=tag_id)
