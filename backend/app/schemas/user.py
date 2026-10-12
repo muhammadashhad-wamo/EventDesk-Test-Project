@@ -46,3 +46,9 @@ class ChangePasswordRequest(BaseModel):
             raise ValueError(f"Password must contain: {', '.join(errors)}.")
 
         return v
+
+class UserLookupResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
