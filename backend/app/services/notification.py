@@ -15,14 +15,14 @@ class NotificationService:
         self,
         *,
         user_id: int,
-        notification_type: NotificationType | None,
+        notification_types: list[NotificationType] | None,
         is_read: bool | None,
         limit: int,
         offset: int,
     ) -> list[NotificationResponse]:
         db_notifications = await self.notifications.get_for_user(
             user_id=user_id,
-            notification_type=notification_type,
+            notification_types=notification_types,
             is_read=is_read,
             limit=limit,
             offset=offset,
