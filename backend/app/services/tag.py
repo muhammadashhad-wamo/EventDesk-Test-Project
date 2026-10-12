@@ -1,8 +1,9 @@
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.tag import TagRepository
-from app.schemas.tag import TagResponse
+from app.schemas.tag import TagResponse, TagCreate
 
 from app.schemas.pagination import PaginationParams, Page
 
@@ -28,3 +29,19 @@ class TagService:
             limit=pagination.limit,
             offset=pagination.offset,
         )
+
+    async def create(self, *, data: TagCreate) -> TagResponse:
+        if await self.tags.get_by_name(data.tag) is not None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Tag already exists")
+
+        try:
+            tag = await self.tags.create(name=data.tag)
+            await self._db.commit()
+        except IntegrityError:
+            await self._db.rollback()
+            raise HTTPException(status.HTTP_409_CONFLICT, "Tag already exists")
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return TagResponse.model_validate(tag)

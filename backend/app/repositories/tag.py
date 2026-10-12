@@ -26,3 +26,9 @@ class TagRepository:
         tags = await self.db.scalars(statement)
         total = await self.db.scalar(select(func.count(Tag.id)).where(*conditions))
         return tags.all(), total or 0
+
+    async def create(self, *, name: str) -> Tag:
+        tag = Tag(tag=name)
+        self.db.add(tag)
+        await self.db.flush()
+        return tag
