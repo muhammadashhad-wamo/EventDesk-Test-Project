@@ -11,14 +11,12 @@ from app.core.security import decode_access_token
 
 from app.db.session import get_db
 
-from app.models.user import User
-
 from app.repositories.user import UserRepository
 from app.repositories.event import EventRepository
 from app.repositories.review import ReviewRepository
 
 from app.schemas.user import UserBase
-from app.schemas.event import EventBase
+from app.schemas.event import EventBase, EventResponse
 from app.schemas.review import ReviewBase
 
 from app.core.enums import EventStatus
@@ -66,7 +64,7 @@ def require_roles(*roles: UserRole):
 CurrentAdmin = Annotated[UserBase, Depends(require_roles(UserRole.ADMIN))]
 
 
-async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventBase:
+async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventResponse:
     db_event = await EventRepository(db).get_by_id(event_id=event_id)
 
     if db_event is None:
@@ -77,10 +75,10 @@ async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) ->
 
     return EventBase.model_validate(db_event)
 
-GetViewableEvent = Annotated[EventBase, Depends(get_viewable_event)]
+GetViewableEvent = Annotated[EventResponse, Depends(get_viewable_event)]
 
 
-async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventBase:
+async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventResponse:
     db_event = await EventRepository(db).get_by_id(event_id=event_id)
 
     if db_event is None:
@@ -91,7 +89,7 @@ async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) ->
 
     return EventBase.model_validate(db_event)
 
-GetEditableEvent = Annotated[EventBase, Depends(get_editable_event)]
+GetEditableEvent = Annotated[EventResponse, Depends(get_editable_event)]
 
 async def get_modifiable_review(user: CurrentUser, review_id: int, db: DbSession):
     review = await ReviewRepository(db).get_by_id(review_id)
