@@ -18,6 +18,7 @@ class NotificationType(StrEnum):
     EVENT_REMINDER = "event_reminder"
     NEW_REVIEW = "new_review"
     REVIEW_MENTION = "review_mention"
+    REVIEW_REPLY = "review_reply"
 
 class AuditAction(StrEnum):
     EVENT_CREATED = "event.created"

@@ -110,3 +110,11 @@ async def review_mentions(*, author_id: int, user_ids: list[int], event_id: int,
         for uid in valid_ids
         if uid != author_id
     ])
+
+async def review_replied(*, review_author_id: int, event_id: int, event_title: str) -> None:
+    await deliver([NotificationCreate(
+        user_id=review_author_id,
+        type=NotificationType.REVIEW_REPLY,
+        message=f"Your review of '{event_title}' received a reply.",
+        event_id=event_id,
+    )])

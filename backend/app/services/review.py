@@ -17,7 +17,7 @@ from app.schemas.user import UserBase
 
 from app.core.enums import UserRole
 
-from app.tasks.notifications import new_review, review_mentions
+from app.tasks.notifications import new_review, review_mentions, review_replied
 
 
 class ReviewService:
@@ -105,7 +105,14 @@ class ReviewService:
             await self._db.rollback()
             raise
 
-    async def reply(self, *, user: UserBase, review_id: int, data: ReplyCreate) -> ReplyResponse:
+    async def reply(
+        self,
+        *,
+        user: UserBase,
+        review_id: int,
+        data: ReplyCreate,
+        background: BackgroundTasks,
+    ) -> ReplyResponse:
         review = await self.reviews.get_by_id(review_id)
         if review is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
@@ -113,15 +120,23 @@ class ReviewService:
         if user.role != UserRole.ADMIN and review.event.organizer_id != user.id:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the event organizer can reply to this review")
 
+        review_author_id = review.user_id
+        event_id = review.event_id
+        event_title = review.event.title
+
         try:
-            reply = await self.reviews.add_reply(
-                review=review,
-                user_id=user.id,
-                comment=data.comment,
-            )
+            reply = await self.reviews.add_reply(review=review, user_id=user.id, comment=data.comment)
             await self._db.commit()
         except Exception:
             await self._db.rollback()
             raise
+
+        if review_author_id != user.id:
+            background.add_task(
+                review_replied,
+                review_author_id=review_author_id,
+                event_id=event_id,
+                event_title=event_title,
+            )
 
         return ReplyResponse.model_validate(reply)

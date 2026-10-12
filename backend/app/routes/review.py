@@ -38,5 +38,5 @@ async def delete_review(review_id: int, review: GetEditableReview, db: DbSession
     response_model=ReplyResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def reply_to_review(review_id: int, data: ReplyCreate, user: CurrentUser, db: DbSession):
-    return await ReviewService(db).reply(user=user, review_id=review_id, data=data)
+async def reply_to_review(review_id: int, data: ReplyCreate, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
+    return await ReviewService(db).reply(user=user, review_id=review_id, data=data, background=background_tasks)
