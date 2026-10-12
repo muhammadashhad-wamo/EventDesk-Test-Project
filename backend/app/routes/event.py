@@ -1,8 +1,12 @@
-from fastapi import APIRouter, status, BackgroundTasks
+from fastapi import APIRouter, status, BackgroundTasks, Query
 
 from app.schemas.event import EventResponse, EventUpdate, EventCreate
+from app.schemas.pagination import Pagination, Page
+from app.schemas.event_filters import EventFilterParams
 
 from app.services.event import EventService
+
+from app.core.enums import EventStatus
 
 from app.core.dependencies import CurrentUser, CurrentAdmin
 from app.core.dependencies import DbSession
@@ -11,13 +15,26 @@ from app.core.dependencies import GetViewableEvent, GetEditableEvent
 router = APIRouter(prefix="/events", tags=["events"])
 admin_router = APIRouter(prefix="/admin/events", tags=["events", "admin"])
 
-@router.get("/", response_model=list[EventResponse])
-async def get_published_events(db: DbSession):
-    return await EventService(db).get_published_events(get_deleted=False)
+@router.get("/", response_model=Page[EventResponse])
+async def get_published_events(db: DbSession, pagination: Pagination, filters: EventFilterParams):
+    return await EventService(db).list_events(
+        filters=filters, pagination=pagination, published_only=True
+    )
 
-@router.get("/me", response_model=list[EventResponse])
-async def get_my_events(user: CurrentUser, db: DbSession):
-    return await EventService(db).get_user_events(user=user, get_deleted=False)
+@router.get("/me", response_model=Page[EventResponse])
+async def get_my_events(
+    user: CurrentUser,
+    db: DbSession,
+    pagination: Pagination,
+    filters: EventFilterParams,
+    event_status: EventStatus | None = Query(None, alias="status"),
+):
+    return await EventService(db).list_events(
+        filters=filters,
+        pagination=pagination,
+        organizer_id=user.id,
+        status=event_status,
+    )
 
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event_by_id(event: GetViewableEvent):

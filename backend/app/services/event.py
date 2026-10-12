@@ -7,6 +7,8 @@ from app.repositories.event import EventRepository
 
 from app.schemas.event import EventResponse, EventUpdate, EventCreate
 from app.schemas.user import UserBase
+from app.schemas.pagination import Page, PaginationParams
+from app.schemas.event_filters import EventFilters
 
 from app.core.enums import EventStatus, AuditAction, AuditEntity
 
@@ -19,17 +21,31 @@ class EventService:
         self.events = EventRepository(db)
         self.audit = AuditLogRepository(db)
 
-    async def get_published_events(self, get_deleted: bool = False) -> list[EventResponse]:
-        db_events = await self.events.get_published(get_deleted=get_deleted)
-        return [EventResponse.model_validate(event) for event in db_events]
-
-    async def get_user_events(self, user: UserBase, get_deleted: bool = False) -> list[EventResponse]:
-        db_events = await self.events.get_user_events(user_id=user.id, get_deleted=get_deleted)
-        return [EventResponse.model_validate(event) for event in db_events]
-
-    async def get_all_events(self, get_deleted: bool = False) -> list[EventResponse]:
-        db_events = await self.events.get_all_events(get_deleted=get_deleted)
-        return [EventResponse.model_validate(event) for event in db_events]
+    async def list_events(
+        self,
+        *,
+        filters: EventFilters,
+        pagination: PaginationParams,
+        published_only: bool = False,
+        organizer_id: int | None = None,
+        status: EventStatus | None = None,
+        get_deleted: bool = False,
+    ) -> Page[EventResponse]:
+        db_events, total = await self.events.search(
+            filters=filters,
+            limit=pagination.limit,
+            offset=pagination.offset,
+            published_only=published_only,
+            organizer_id=organizer_id,
+            status=status,
+            get_deleted=get_deleted,
+        )
+        return Page[EventResponse](
+            items=[EventResponse.model_validate(event) for event in db_events],
+            total=total,
+            limit=pagination.limit,
+            offset=pagination.offset,
+        )
 
     async def create(self, user: UserBase, data: EventCreate):
         try:

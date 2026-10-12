@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import lazyload, selectinload
 
@@ -7,9 +7,17 @@ from decimal import Decimal
 
 from app.core.enums import EventStatus
 from app.models.event import Event
+from app.models.tag import Tag
+from app.models.venue import Venue
+from app.schemas.event_filters import EventFilters
 
 _LOAD_ATTENDEES = selectinload(Event.bookings)
 
+_SORT_COLUMNS = {
+    "time": Event.time,
+    "price": Event.ticket_price,
+    "title": Event.title,
+}
 
 class EventRepository:
     def __init__(self, db: AsyncSession) -> None:
@@ -20,11 +28,13 @@ class EventRepository:
             organizer_id: int,
             time: datetime,
             title: str,
-            description: str,
+            description: str | None,
             status: str,
-            category: str,
+            category: str | None,
             ticket_price: Decimal,
             available_tickets_count: int,
+            venue: Venue | None = None,
+            tags: list[Tag] | None = None,
             is_active: bool = True,    
     ):
         event = Event(
@@ -36,6 +46,8 @@ class EventRepository:
             category=category,
             ticket_price=ticket_price,
             available_tickets_count=available_tickets_count,
+            venue=venue,
+            tags=tags or [],
             is_active=is_active,
         )
         self.db.add(event)
@@ -74,29 +86,68 @@ class EventRepository:
         )
         return await self.db.scalar(statement)
 
-    async def get_published(self, get_deleted: bool = False) -> list[Event]:
-        if get_deleted:
-            statement = select(Event).where(Event.status == "published")
-        else:
-            statement = select(Event).where(Event.status == "published", Event.is_active == True)
-        events = await self.db.scalars(statement)
-        return events.all()
+    async def search(
+        self,
+        *,
+        filters: EventFilters,
+        limit: int,
+        offset: int,
+        published_only: bool = False,
+        organizer_id: int | None = None,
+        status: EventStatus | None = None,
+        get_deleted: bool = False,
+    ) -> tuple[list[Event], int]:
+        conditions = []
 
-    async def get_user_events(self, user_id: int, get_deleted: bool = False) -> list[Event]:
-        if get_deleted:
-            statement = select(Event).where(Event.organizer_id == user_id)
-        else:
-            statement = select(Event).where(Event.organizer_id == user_id, Event.is_active == True)
-        events = await self.db.scalars(statement)
-        return events.all()
+        if not get_deleted:
+            conditions.append(Event.is_active == True)
+        if published_only:
+            conditions.append(Event.status == EventStatus.PUBLISHED.value)
+        if status is not None:
+            conditions.append(Event.status == status.value)
+        if organizer_id is not None:
+            conditions.append(Event.organizer_id == organizer_id)
 
-    async def get_all_events(self, get_deleted: bool = False) -> list[Event]:
-        if get_deleted:
-            statement = select(Event)
-        else:
-            statement = select(Event).where(Event.is_active == True)
+        if filters.search:
+            conditions.append(or_(
+                Event.title.icontains(filters.search, autoescape=True),
+                Event.description.icontains(filters.search, autoescape=True),
+            ))
+        if filters.category:
+            conditions.append(func.lower(Event.category) == filters.category.strip().lower())
+        if filters.venue_id is not None:
+            conditions.append(Event.venue_id == filters.venue_id)
+        if filters.city:
+            conditions.append(Event.venue.has(func.lower(Venue.city) == filters.city.strip().lower()))
+        if filters.tags:
+            wanted = [t.strip().lower() for t in filters.tags]
+            conditions.append(Event.tags.any(Tag.tag.in_(wanted)))
+        if filters.min_price is not None:
+            conditions.append(Event.ticket_price >= filters.min_price)
+        if filters.max_price is not None:
+            conditions.append(Event.ticket_price <= filters.max_price)
+        if filters.starts_after is not None:
+            conditions.append(Event.time >= filters.starts_after)
+        if filters.starts_before is not None:
+            conditions.append(Event.time <= filters.starts_before)
+        if filters.has_tickets is True:
+            conditions.append(Event.available_tickets_count > 0)
+        elif filters.has_tickets is False:
+            conditions.append(Event.available_tickets_count <= 0)
+
+        sort_column = _SORT_COLUMNS[filters.sort_by]
+        direction = sort_column.desc() if filters.order == "desc" else sort_column.asc()
+
+        statement = (
+            select(Event)
+            .where(*conditions)
+            .order_by(direction, Event.id)
+            .limit(limit)
+            .offset(offset)
+        )
         events = await self.db.scalars(statement)
-        return events.all()
+        total = await self.db.scalar(select(func.count(Event.id)).where(*conditions))
+        return events.all(), total or 0
 
     async def update(self, *, event: Event, data: dict) -> Event:
         db_event = await self.db.merge(event)
