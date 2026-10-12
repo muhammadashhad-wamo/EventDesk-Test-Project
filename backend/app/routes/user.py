@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Query
 
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest
 from app.schemas.admin_user import RoleUpdate, AdminUserResponse
@@ -8,6 +8,10 @@ from app.services.admin_user import AdminUserService
 
 from app.core.dependencies import CurrentUser, CurrentAdmin
 from app.core.dependencies import DbSession
+
+from app.schemas.pagination import Page, Pagination
+
+from app.core.enums import UserRole
 
 router = APIRouter(prefix="/users", tags=["users"])
 admin_router = APIRouter(prefix="/admin/users", tags=["admin", "users"])
