@@ -19,7 +19,7 @@ class ReviewReply(Base):
     comment: Mapped[str] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    user: Mapped["User"] = relationship(back_populates="review_replies", lazy="raise")
+    user: Mapped["User"] = relationship(back_populates="review_replies", lazy="joined")
     review: Mapped["Review"] = relationship(back_populates="replies", lazy="raise")
 
     def __repr__(self) -> str:

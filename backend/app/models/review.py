@@ -24,7 +24,7 @@ class Review(Base):
     comment: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    user: Mapped["User"] = relationship(back_populates="reviews", lazy="raise")
+    user: Mapped["User"] = relationship(back_populates="reviews", lazy="joined")
     event: Mapped["Event"] = relationship(back_populates="reviews", lazy="joined")
     replies: Mapped[list["ReviewReply"]] = relationship(
         back_populates="review", lazy="selectin", cascade="all, delete-orphan"
