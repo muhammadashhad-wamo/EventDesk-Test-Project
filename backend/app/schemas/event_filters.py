@@ -15,7 +15,8 @@ class EventFilters:
     def __init__(
         self,
         search: str | None = Query(None, min_length=1, max_length=100, description="Matches title or description"),
-        category: str | None = Query(None, max_length=50),
+        category_id: int | None = None,
+        category: str | None = Query(None, max_length=50, description="Category name"),
         venue_id: int | None = None,
         city: str | None = Query(None, max_length=50, description="City of the event's venue"),
         tags: list[str] | None = Query(None, description="Events having ANY of these tags"),
@@ -28,6 +29,7 @@ class EventFilters:
         order: Literal["asc", "desc"] = "asc",
     ) -> None:
         self.search = search
+        self.category_id = category_id
         self.category = category
         self.venue_id = venue_id
         self.city = city
