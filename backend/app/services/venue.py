@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.venue import VenueRepository
 from app.schemas.pagination import Page, PaginationParams
-from app.schemas.venue import VenueResponse
+from app.schemas.venue import VenueResponse, VenueUpdate, VenueCreate
 
 
 class VenueService:
@@ -40,3 +40,45 @@ class VenueService:
         if venue is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Venue not found")
         return VenueResponse.model_validate(venue)
+
+    async def create(self, *, data: VenueCreate) -> VenueResponse:
+        try:
+            venue = await self.venues.create(
+                title=data.title,
+                street=data.street,
+                city=data.city,
+                country=data.country,
+            )
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+        return VenueResponse.model_validate(venue)
+
+    async def update(self, *, venue_id: int, data: VenueUpdate) -> VenueResponse:
+        venue = await self.venues.get_by_id(venue_id)
+        if venue is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Venue not found")
+
+        try:
+            venue = await self.venues.update(venue=venue, data=data.model_dump(exclude_none=True))
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+        return VenueResponse.model_validate(venue)
+
+    async def delete(self, *, venue_id: int) -> None:
+        venue = await self.venues.get_by_id(venue_id)
+        if venue is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Venue not found")
+
+        if await self.venues.has_upcoming_events(venue_id=venue_id, now=datetime.now(timezone.utc)):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Venue has upcoming events")
+
+        try:
+            await self.venues.delete(venue=venue)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
