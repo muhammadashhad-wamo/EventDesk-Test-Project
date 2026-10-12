@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.booking import BookingRepository
 from app.repositories.event import EventRepository
 from app.repositories.audit_log import AuditLogRepository
-from app.schemas.booking import BookingResponse, BookingCreate, BookingDetailResponse
+from app.schemas.booking import BookingResponse, BookingCreate, BookingDetailResponse, MyBookingResponse
 from app.schemas.pagination import Page, PaginationParams
 
 from app.core.enums import EventStatus, AuditAction, AuditEntity
@@ -24,9 +24,9 @@ class BookingService:
         self.bookings = BookingRepository(db)
         self.audit = AuditLogRepository(db)
 
-    async def get_my_bookings(self, *, user_id: int) -> list[BookingResponse]:
+    async def get_my_bookings(self, *, user_id: int) -> list[MyBookingResponse]:
         db_bookings = await self.bookings.get_user_bookings(user_id=user_id)
-        return [BookingResponse.model_validate(b) for b in db_bookings]
+        return [MyBookingResponse.model_validate(b) for b in db_bookings]
 
     async def list_bookings(
         self,

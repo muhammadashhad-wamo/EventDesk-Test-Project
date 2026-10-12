@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, BackgroundTasks
 
 from app.core.dependencies import CurrentAdmin, CurrentUser, DbSession
-from app.schemas.booking import BookingResponse, BookingCreate, BookingDetailResponse
+from app.schemas.booking import BookingResponse, BookingCreate, BookingDetailResponse, MyBookingResponse
 from app.services.booking import BookingService
 
 from app.schemas.pagination import Page, Pagination
@@ -12,7 +12,7 @@ router = APIRouter(tags=["bookings"])
 admin_router = APIRouter(prefix="/admin", tags=["bookings", "admin"])
 
 
-@router.get("/bookings/me", response_model=list[BookingResponse])
+@router.get("/bookings/me", response_model=list[MyBookingResponse])
 async def get_my_bookings(user: CurrentUser, db: DbSession):
     return await BookingService(db).get_my_bookings(user_id=user.id)
 

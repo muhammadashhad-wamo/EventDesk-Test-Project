@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.event import EventResponse
+
 class BookingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -24,3 +26,7 @@ class BookingUserResponse(BaseModel):
 
 class BookingDetailResponse(BookingResponse):
     user: BookingUserResponse
+    event: EventResponse
+
+class MyBookingResponse(BookingResponse):
+    event: EventResponse

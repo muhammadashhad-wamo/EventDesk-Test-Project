@@ -1,5 +1,6 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -47,7 +48,7 @@ class BookingRepository:
         return bookings.all(), total or 0
 
     async def get_user_bookings(self, *, user_id: int, active_only: bool = True) -> list[EventBooking]:
-        statement = select(EventBooking).where(EventBooking.user_id == user_id)
+        statement = select(EventBooking).where(EventBooking.user_id == user_id).options(joinedload(EventBooking.event)).order_by(EventBooking.created_at.desc())
         if active_only:
             statement = statement.where(EventBooking.is_active == True)
         bookings = await self.db.scalars(statement)
