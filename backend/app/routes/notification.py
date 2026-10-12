@@ -12,14 +12,14 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 async def get_my_notifications(
     user: CurrentUser,
     db: DbSession,
-    notification_type: NotificationType | None = Query(default=None, alias="type"),
+    notification_types: list[NotificationType] | None = Query(default=None, alias="type"),
     is_read: bool | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
     return await NotificationService(db).get_my_notifications(
         user_id=user.id,
-        notification_type=notification_type,
+        notification_types=notification_types,
         is_read=is_read,
         limit=limit,
         offset=offset,
