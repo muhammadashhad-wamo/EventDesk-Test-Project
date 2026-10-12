@@ -47,6 +47,8 @@ class EventUpdate(BaseModel):
     category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)] | None = None
     available_tickets_count: Annotated[int, Field(ge=0)] | None = None
+    venue_id: int | None = None
+    tag_ids: list[int] | None = Field(default=None, max_length=20)
 
 class EventResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
