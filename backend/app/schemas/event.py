@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from app.schemas.venue import VenueResponse
 from app.schemas.user import UserResponse
+from app.schemas.tag import TagResponse
 
 class EventBase(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
@@ -14,7 +15,7 @@ class EventBase(BaseModel):
     id: int
     title: Annotated[str, Field(min_length=1, max_length=50)]
     organizer: UserResponse
-    venue: VenueResponse | None = None
+    venue_id: int | None = None
     time: datetime
     description: Annotated[str, Field(min_length=1, max_length=200)]
     status: EventStatus
@@ -33,6 +34,8 @@ class EventCreate(BaseModel):
     category: Annotated[str, Field(min_length=1, max_length=50)] | None = None
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
+    venue_id: int | None = None
+    tag_ids: list[int] = Field(default_factory=list, max_length=20)
 
 class EventUpdate(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
@@ -59,3 +62,4 @@ class EventResponse(BaseModel):
     ticket_price: Annotated[Decimal, Field(ge=0)]
     available_tickets_count: Annotated[int, Field(ge=0)]
     is_active: bool = True
+    tags: list[TagResponse] = []
