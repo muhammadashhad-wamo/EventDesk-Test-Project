@@ -149,14 +149,26 @@ class EventRepository:
         total = await self.db.scalar(select(func.count(Event.id)).where(*conditions))
         return events.all(), total or 0
 
-    async def update(self, *, event: Event, data: dict) -> Event:
+    async def update(
+        self,
+        *,
+        event: Event,
+        data: dict,
+        venue: Venue | None = None,
+        set_venue: bool = False,
+        tags: list[Tag] | None = None,
+    ) -> Event:
         db_event = await self.db.merge(event)
 
         for field, value in data.items():
             setattr(db_event, field, value)
 
-        await self.db.flush()
+        if set_venue:
+            db_event.venue = venue
+        if tags is not None:
+            db_event.tags = tags
 
+        await self.db.flush()
         return db_event
 
     async def delete(self, *, event: Event) -> None:
