@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.tag import TagRepository
-from app.schemas.tag import TagResponse, TagCreate
+from app.schemas.tag import TagResponse, TagCreate, TagUpdate
 
 from app.schemas.pagination import PaginationParams, Page
 
@@ -36,6 +36,29 @@ class TagService:
 
         try:
             tag = await self.tags.create(name=data.tag)
+            await self._db.commit()
+        except IntegrityError:
+            await self._db.rollback()
+            raise HTTPException(status.HTTP_409_CONFLICT, "Tag already exists")
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        return TagResponse.model_validate(tag)
+
+    async def rename(self, *, tag_id: int, data: TagUpdate) -> TagResponse:
+        tag = await self.tags.get_by_id(tag_id)
+        
+        if tag is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
+
+        existing = await self.tags.get_by_name(data.tag)
+
+        if existing is not None and existing.id != tag.id:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Tag already exists")
+
+        try:
+            tag = await self.tags.rename(tag=tag, name=data.tag)
             await self._db.commit()
         except IntegrityError:
             await self._db.rollback()

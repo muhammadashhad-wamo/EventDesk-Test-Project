@@ -9,6 +9,9 @@ TagName = Annotated[
 class TagCreate(BaseModel):
     tag: TagName
 
+class TagUpdate(BaseModel):
+    tag: TagName
+
 class TagResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

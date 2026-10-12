@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, status
 
 from app.core.dependencies import DbSession, CurrentAdmin
-from app.schemas.tag import TagResponse, TagCreate
+from app.schemas.tag import TagResponse, TagCreate, TagUpdate
 from app.services.tag import TagService
 
 from app.schemas.pagination import Pagination, Page
@@ -26,3 +26,7 @@ async def list_tags(
 @admin_router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 async def create_tag(data: TagCreate, current_admin: CurrentAdmin, db: DbSession):
     return await TagService(db).create(data=data)
+
+@admin_router.patch("/{tag_id}", response_model=TagResponse)
+async def rename_tag(tag_id: int, data: TagUpdate, current_admin: CurrentAdmin, db: DbSession):
+    return await TagService(db).rename(tag_id=tag_id, data=data)

@@ -32,3 +32,8 @@ class TagRepository:
         self.db.add(tag)
         await self.db.flush()
         return tag
+
+    async def rename(self, *, tag: Tag, name: str) -> Tag:
+        tag.tag = name
+        await self.db.flush()
+        return tag
