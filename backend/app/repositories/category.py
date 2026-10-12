@@ -35,3 +35,9 @@ class CategoryRepository:
         categories = await self.db.scalars(statement)
         total = await self.db.scalar(select(func.count(Category.id)).where(*conditions))
         return categories.all(), total or 0
+
+    async def create(self, *, name: str) -> Category:
+        category = Category(name=name)
+        self.db.add(category)
+        await self.db.flush()
+        return category
