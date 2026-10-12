@@ -33,3 +33,7 @@ async def update_category(
     category_id: int, data: CategoryUpdate, current_admin: CurrentAdmin, db: DbSession
 ):
     return await CategoryService(db).rename(category_id=category_id, data=data)
+
+@admin_router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_category(category_id: int, current_admin: CurrentAdmin, db: DbSession):
+    await CategoryService(db).delete(category_id=category_id)

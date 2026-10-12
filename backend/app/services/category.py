@@ -67,3 +67,20 @@ class CategoryService:
             raise
 
         return CategoryResponse.model_validate(category)
+
+    async def delete(self, *, category_id: int) -> None:
+        category = await self.categories.get_by_id(category_id)
+        if category is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Category not found")
+
+        if await self.categories.has_active_events(category_id=category_id):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Category is used by existing events"
+            )
+
+        try:
+            await self.categories.delete(category=category)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise

@@ -46,3 +46,16 @@ class CategoryRepository:
         category.name = name
         await self.db.flush()
         return category
+
+    async def delete(self, *, category: Category) -> None:
+        await self.db.delete(category)
+        await self.db.flush()
+
+    async def has_active_events(self, *, category_id: int) -> bool:
+        statement = select(
+            exists().where(
+                Event.category_id == category_id,
+                Event.is_active == True,
+            )
+        )
+        return bool(await self.db.scalar(statement))
