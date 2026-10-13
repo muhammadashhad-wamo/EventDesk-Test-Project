@@ -16,7 +16,7 @@ from app.repositories.event import EventRepository
 from app.repositories.review import ReviewRepository
 
 from app.schemas.user import UserBase
-from app.schemas.event import EventBase, EventResponse
+from app.schemas.event import EventResponse
 from app.schemas.review import ReviewBase
 
 from app.core.enums import EventStatus
@@ -73,7 +73,7 @@ async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) ->
     if (user.role == UserRole.USER) and (db_event.is_active == False or (user.id != db_event.organizer_id and db_event.status not in (EventStatus.PUBLISHED,))):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view event")
 
-    return EventBase.model_validate(db_event)
+    return EventResponse.model_validate(db_event)
 
 GetViewableEvent = Annotated[EventResponse, Depends(get_viewable_event)]
 
@@ -87,7 +87,7 @@ async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) ->
     if (user.role == UserRole.USER) and (db_event.is_active == False or user.id != db_event.organizer_id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to edit event")
 
-    return EventBase.model_validate(db_event)
+    return EventResponse.model_validate(db_event)
 
 GetEditableEvent = Annotated[EventResponse, Depends(get_editable_event)]
 
