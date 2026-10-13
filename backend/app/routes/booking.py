@@ -26,7 +26,7 @@ async def book_tickets(event_id: int, data: BookingCreate, user: CurrentUser, db
 
 @router.patch("/events/{event_id}/bookings/me/cancel", response_model=BookingResponse)
 async def cancel_my_booking(event_id: int, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
-    return await BookingService(db).cancel(actor_id=user.id, user_id=user.id, event_id=event_id, background=background_tasks)
+    return await BookingService(db).cancel(actor_id=user.id, actor_role=user.role, user_id=user.id, event_id=event_id, background=background_tasks)
 
 @router.get("/events/{event_id}/bookings", response_model=Page[BookingDetailResponse])
 async def get_event_bookings(

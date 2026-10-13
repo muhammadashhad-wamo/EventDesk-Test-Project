@@ -16,6 +16,8 @@ from app.tasks.notifications import booking_confirmed, booking_cancelled
 
 from app.realtime.manager import manager
 
+from app.core.enums import UserRole
+
 
 class BookingService:
     def __init__(self, db: AsyncSession):
@@ -119,7 +121,7 @@ class BookingService:
 
         return BookingResponse.model_validate(booking)
 
-    async def cancel(self, *, actor_id: int, user_id: int, event_id: int, background: BackgroundTasks) -> BookingResponse:
+    async def cancel(self, *, actor_id: int, actor_role: str, user_id: int, event_id: int, background: BackgroundTasks) -> BookingResponse:
         try:
             event = await self.events.get_by_id_for_update(event_id)
             if event is None:
@@ -132,7 +134,7 @@ class BookingService:
             if not booking.is_active:
                 raise HTTPException(status.HTTP_409_CONFLICT, "Booking is already cancelled")
 
-            if event.time <= datetime.now(timezone.utc):
+            if event.time <= datetime.now(timezone.utc) and actor_role != UserRole.ADMIN.value:
                 raise HTTPException(
                     status.HTTP_409_CONFLICT,
                     "Cannot cancel a booking for an event that has already started",
