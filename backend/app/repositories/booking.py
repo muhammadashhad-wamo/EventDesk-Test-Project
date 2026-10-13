@@ -39,6 +39,7 @@ class BookingRepository:
         statement = (
             select(EventBooking)
             .where(*conditions)
+            .options(joinedload(EventBooking.user), joinedload(EventBooking.event))
             .order_by(EventBooking.created_at.desc(), EventBooking.event_id, EventBooking.user_id)
             .limit(limit)
             .offset(offset)
