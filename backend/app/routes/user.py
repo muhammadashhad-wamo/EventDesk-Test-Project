@@ -56,7 +56,7 @@ async def lookup_users(
 
 
 ############## Admin routes ##################
-@admin_router.get("/", response_model=Page[AdminUserResponse])
+@admin_router.get("", response_model=Page[AdminUserResponse])
 async def list_users(
     current_admin: CurrentAdmin,
     db: DbSession,
