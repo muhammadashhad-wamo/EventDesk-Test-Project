@@ -114,8 +114,15 @@ class EventRepository:
                 Event.title.icontains(filters.search, autoescape=True),
                 Event.description.icontains(filters.search, autoescape=True),
             ))
+        if filters.category_id is not None:
+            conditions.append(Event.category_id == filters.category_id)
+
         if filters.category:
-            conditions.append(func.lower(Event.category) == filters.category.strip().lower())
+            conditions.append(
+                Event.category.has(
+                    func.lower(Category.name) == filters.category.strip().lower()
+                )
+            )
         if filters.venue_id is not None:
             conditions.append(Event.venue_id == filters.venue_id)
         if filters.city:
