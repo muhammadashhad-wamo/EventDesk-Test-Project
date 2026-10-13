@@ -152,6 +152,12 @@ class UserService:
 
         new_password_hash = hash_password(data.new_password.get_secret_value())
 
+        if data.new_password.get_secret_value() == data.current_password.get_secret_value():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="New password cannot be same as current password",
+            )
+
         db_user = User(**user.model_dump())
         await self.users.update_password(user=db_user, new_password_hash=new_password_hash)
         await self.tokens.revoke_all_for_user(
