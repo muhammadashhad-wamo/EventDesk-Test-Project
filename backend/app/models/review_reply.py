@@ -11,10 +11,12 @@ class ReviewReply(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_account.id")
+        ForeignKey("user_account.id"),
+        index=True
     )
     review_id: Mapped[int] = mapped_column(
-        ForeignKey("review.id")
+        ForeignKey("review.id"),
+        index=True
     )
     comment: Mapped[str] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
