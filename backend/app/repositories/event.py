@@ -31,7 +31,7 @@ class EventRepository:
             title: str,
             description: str | None,
             status: str,
-            category: str | None,
+            category: Category | None,
             ticket_price: Decimal,
             available_tickets_count: int,
             venue: Venue | None = None,
