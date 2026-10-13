@@ -23,7 +23,12 @@ class UserBase(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Annotated[str | None, Field(min_length=1, max_length=50)] = None
-    email: EmailStr | None = None
+    email: EmailStr = Field(max_length=255)
+
+    @field_validator("email")
+    @classmethod
+    def normalise_email(cls, v: str | None) -> str | None:
+        return v.strip().lower() if v else v
 
 class ChangePasswordRequest(BaseModel):
     current_password: SecretStr = Field(min_length=8, max_length=20)
