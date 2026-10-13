@@ -16,6 +16,8 @@ from app.schemas.pagination import Page, PaginationParams
 from app.schemas.user import UserBase
 from app.tasks.notifications import event_cancelled
 
+from datetime import datetime, timezone
+
 
 class EventService:
     def __init__(self, db: AsyncSession):
@@ -52,7 +54,16 @@ class EventService:
             offset=pagination.offset,
         )
 
+    
+    @staticmethod
+    def _ensure_future(value: datetime) -> None:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        if value <= datetime.now(timezone.utc):
+            raise HTTPException(422, "Event time must be in the future")
+
     async def create(self, user: UserBase, data: EventCreate) -> EventResponse:
+        self._ensure_future(data.time)
         venue = await self._get_venue(data.venue_id) if data.venue_id is not None else None
         category = await self._get_category(data.category_id) if data.category_id is not None else None
         tags = await self._get_tags(data.tag_ids)
