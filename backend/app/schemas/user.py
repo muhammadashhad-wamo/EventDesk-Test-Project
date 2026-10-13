@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, SecretStr, field_validator
 from app.core.enums import UserRole
 from typing import Annotated
+from app.schemas.auth import check_password_mix_helper, normalise_email_helper
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
@@ -28,7 +29,7 @@ class UserUpdate(BaseModel):
     @field_validator("email")
     @classmethod
     def normalise_email(cls, v: str | None) -> str | None:
-        return v.strip().lower() if v else v
+        return normalise_email_helper(v)
 
 class ChangePasswordRequest(BaseModel):
     current_password: SecretStr = Field(min_length=8, max_length=128)
@@ -37,20 +38,7 @@ class ChangePasswordRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def check_password_mix(cls, v: SecretStr) -> SecretStr:
-        pwd = v.get_secret_value()
-
-        errors = []
-        if not any(c.isupper() for c in pwd):
-            errors.append("at least one uppercase letter")
-        if not any(c.islower() for c in pwd):
-            errors.append("at least one lowercase letter")
-        if not any(c.isdigit() for c in pwd):
-            errors.append("at least one digit")
-
-        if errors:
-            raise ValueError(f"Password must contain: {', '.join(errors)}.")
-
-        return v
+        return check_password_mix_helper(v)
 
 class UserLookupResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
