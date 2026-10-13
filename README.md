@@ -11,7 +11,6 @@ The API allows users to create and manage events, venues, bookings, reviews, rep
 * Event creation and management
 * One venue per event
 * Event booking and ticket management
-* Booking price history
 * Event reviews and ratings
 * Replies to reviews
 * Event tagging system
