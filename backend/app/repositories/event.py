@@ -9,6 +9,7 @@ from app.core.enums import EventStatus
 from app.models.event import Event
 from app.models.tag import Tag
 from app.models.venue import Venue
+from app.models.category import Category
 from app.schemas.event_filters import EventFilters
 
 _LOAD_ATTENDEES = selectinload(Event.bookings)
