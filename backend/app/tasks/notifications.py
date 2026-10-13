@@ -5,7 +5,6 @@ from app.core.enums import NotificationType
 from app.db.session import AsyncSessionLocal
 from app.models.notification import Notification
 from app.realtime.manager import manager
-from app.repositories.event import EventRepository
 from app.repositories.notification import NotificationRepository
 from app.repositories.user import UserRepository
 from app.schemas.notification import NotificationCreate, NotificationResponse
@@ -62,26 +61,16 @@ async def booking_cancelled(*, user_id: int, event_id: int, event_title: str) ->
     )])
 
 
-async def event_cancelled(*, event_id: int) -> None:
-    try:
-        async with AsyncSessionLocal() as db:
-            event = await EventRepository(db).get_by_id_with_bookings(event_id)
-            if event is None:
-                return
-            items = [
-                NotificationCreate(
-                    user_id=booking.user_id,
-                    type=NotificationType.EVENT_CANCELLED,
-                    message=f"The event '{event.title}' was cancelled.",
-                    event_id=event.id,
-                )
-                for booking in event.bookings
-                if booking.is_active
-            ]
-    except Exception:
-        logger.exception("Could not load attendees for event %s", event_id)
-        return
-    await deliver(items)
+async def event_cancelled(*, event_id: int, event_title: str, user_ids: list[int]) -> None:
+    await deliver([
+        NotificationCreate(
+            user_id=user_id,
+            type=NotificationType.EVENT_CANCELLED,
+            message=f"The event '{event_title}' was cancelled.",
+            event_id=event_id,
+        )
+        for user_id in user_ids
+    ])
 
 
 async def new_review(*, organizer_id: int, event_id: int, event_title: str, stars_count: int) -> None:

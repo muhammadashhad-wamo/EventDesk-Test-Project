@@ -190,11 +190,13 @@ class EventRepository:
         db_event.is_active = False
         await self.db.flush()
 
-    async def get_by_id_with_bookings(self, event_id: int) -> Event | None:
+    async def get_by_id_for_update_with_bookings(self, event_id: int) -> Event | None:
         statement = (
             select(Event)
             .where(Event.id == event_id)
-            .options(lazyload("*"), _LOAD_ATTENDEES)
+            .options(_LOAD_ATTENDEES)
+            .with_for_update(of=Event)
+            .execution_options(populate_existing=True)
         )
         return await self.db.scalar(statement)
 
