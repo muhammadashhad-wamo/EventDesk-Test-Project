@@ -21,7 +21,7 @@ def normalise_email_helper(cls, v: str) -> str:
 
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=50)
-    email: EmailStr = Field(max_length=255)
+    email: EmailStr
     password: SecretStr = Field(min_length=8, max_length=128)
 
 

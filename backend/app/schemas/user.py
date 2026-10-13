@@ -24,7 +24,7 @@ class UserBase(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Annotated[str | None, Field(min_length=1, max_length=50)] = None
-    email: Annotated[EmailStr, Field(max_length=255)] | None = None
+    email: EmailStr | None = None
 
     @field_validator("email")
     @classmethod
