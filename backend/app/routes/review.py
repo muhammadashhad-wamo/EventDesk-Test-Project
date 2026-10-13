@@ -12,6 +12,9 @@ from app.services.review import ReviewService
 
 router = APIRouter(tags=["reviews"])
 
+@router.get("/reviews/{review_id}", response_model=ReviewResponse)
+async def get_review(review_id: int, user: CurrentUser, db: DbSession):
+    return await ReviewService(db).get_review_by_id(user=user, review_id=review_id)
 
 @router.get("/events/{event_id}/reviews", response_model=list[ReviewResponse])
 async def get_event_reviews(event: GetViewableEvent, db: DbSession):

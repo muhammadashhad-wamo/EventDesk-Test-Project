@@ -36,6 +36,24 @@ class ReviewService:
 
         return [ReviewResponse.model_validate(review) for review in event.reviews]
 
+    async def get_review_by_id(self, *, user: UserBase, review_id: int) -> ReviewResponse:
+        review = await self.reviews.get_by_id(review_id)
+        if review is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
+
+        if user.role != UserRole.ADMIN:
+            event = review.event
+            if (
+                not event.is_active
+                or (
+                    user.id != event.organizer_id
+                    and event.status != "published"
+                )
+            ):
+                raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view this review")
+
+        return ReviewResponse.model_validate(review)
+
     async def create(self, *, user: UserBase, event_id: int, data: ReviewCreate, background: BackgroundTasks) -> ReviewResponse:
         event = await self.events.get_by_id(event_id=event_id)
         if event is None:
