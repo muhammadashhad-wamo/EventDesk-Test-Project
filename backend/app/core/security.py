@@ -18,11 +18,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return _password_hash.verify(plain_password, hashed_password)
 
 
-def create_access_token(user_id: int, role: str) -> str:
+def create_access_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    payload = {"sub": str(user_id), "role": role, "exp": expire}
+    payload = {"sub": str(user_id), "exp": expire}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
