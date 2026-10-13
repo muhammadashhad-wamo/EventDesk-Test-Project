@@ -16,7 +16,7 @@ class AuditLog(Base):
     )
     action: Mapped[str] = mapped_column(String(50))
     entity_type: Mapped[str] = mapped_column(String(50))
-    entity_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     actor: Mapped["User | None"] = relationship(lazy="joined")
