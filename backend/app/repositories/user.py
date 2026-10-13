@@ -31,9 +31,7 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
-    async def update(self, *, user: User, data: dict) -> User:
-        db_user = await self.db.merge(user)
-
+    async def update(self, *, db_user: User, data: dict) -> User:
         for field, value in data.items():
             setattr(db_user, field, value)
 

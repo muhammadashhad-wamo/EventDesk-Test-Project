@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.models.user import User as User
 from app.repositories.user import UserRepository
@@ -78,21 +79,33 @@ class UserService:
                     detail="The given email is already associated with an account"
                 )
 
-        db_user = User(**user.model_dump())
+        db_user = await self.users.get_by_id(user_id=id)
+                
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
 
         new_user = await self.users.update(
             data=update_data,
-            user=db_user
+            db_user=db_user
         )
-
-        await self._db.commit()
+        try:
+            await self._db.commit()
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+            await self._db.rollback()
         return UserResponse.model_validate(new_user)
 
     async def delete_by_id(self, *, id: int, actor_id: int | None = None) -> None:
         if actor_id is not None and id == actor_id:
             raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                "Admins cannot deactivate their own account"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The given email is already associated with an account"
             )
 
         db_user = await self.users.get_by_id(user_id=id)
