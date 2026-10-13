@@ -10,6 +10,7 @@ from app.schemas.review import (
     ReplyUpdate
 )
 from app.services.review import ReviewService
+from app.schemas.pagination import Page, Pagination
 
 router = APIRouter(tags=["reviews"])
 
@@ -17,9 +18,9 @@ router = APIRouter(tags=["reviews"])
 async def get_review(review_id: int, user: CurrentUser, db: DbSession):
     return await ReviewService(db).get_review_by_id(user=user, review_id=review_id)
 
-@router.get("/events/{event_id}/reviews", response_model=list[ReviewResponse])
-async def get_event_reviews(event: GetViewableEvent, db: DbSession):
-    return await ReviewService(db).get_event_reviews(event_id=event.id)
+@router.get("/events/{event_id}/reviews", response_model=Page[ReviewResponse])
+async def get_event_reviews(event: GetViewableEvent, db: DbSession, pagination: Pagination):
+    return await ReviewService(db).get_event_reviews(event_id=event.id, pagination=pagination)
 
 @router.post(
     "/events/{event_id}/reviews",

@@ -23,6 +23,8 @@ from app.tasks.notifications import new_review, review_mentions, review_replied
 
 from datetime import datetime, timezone
 
+from app.schemas.pagination import Page, PaginationParams
+
 
 class ReviewService:
     def __init__(self, db: AsyncSession):
@@ -32,12 +34,20 @@ class ReviewService:
         self.bookings = BookingRepository(db)
         self.users = UserRepository(db)
 
-    async def get_event_reviews(self, *, event_id: int) -> list[ReviewResponse]:
-        event = await self.events.get_by_id_with_reviews(event_id)
-        if event is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
-
-        return [ReviewResponse.model_validate(review) for review in event.reviews]
+    async def get_event_reviews(
+        self, *, event_id: int, pagination: PaginationParams
+    ) -> Page[ReviewResponse]:
+        # the route's GetViewableEvent dependency already guarantees the event exists
+        # and is visible to this user
+        db_reviews, total = await self.reviews.get_by_event(
+            event_id=event_id, limit=pagination.limit, offset=pagination.offset
+        )
+        return Page[ReviewResponse](
+            items=[ReviewResponse.model_validate(review) for review in db_reviews],
+            total=total,
+            limit=pagination.limit,
+            offset=pagination.offset,
+        )
 
     async def get_review_by_id(self, *, user: UserBase, review_id: int) -> ReviewResponse:
         review = await self.reviews.get_by_id(review_id)

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -15,6 +15,22 @@ class ReviewRepository:
 
     async def get_by_id(self, review_id: int) -> Review | None:
         return await self.db.get(Review, review_id)
+
+    async def get_by_event(
+        self, *, event_id: int, limit: int, offset: int
+    ) -> tuple[list[Review], int]:
+        statement = (
+            select(Review)
+            .where(Review.event_id == event_id)
+            .order_by(Review.created_at.desc(), Review.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        reviews = await self.db.scalars(statement)
+        total = await self.db.scalar(
+            select(func.count(Review.id)).where(Review.event_id == event_id)
+        )
+        return reviews.all(), total or 0
 
     async def exists_for_user_and_event(self, *, user_id: int, event_id: int) -> bool:
         statement = select(
