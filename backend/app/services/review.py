@@ -21,6 +21,8 @@ from app.core.enums import UserRole, EventStatus
 
 from app.tasks.notifications import new_review, review_mentions, review_replied
 
+from datetime import datetime, timezone
+
 
 class ReviewService:
     def __init__(self, db: AsyncSession):
@@ -59,6 +61,14 @@ class ReviewService:
         event = await self.events.get_by_id(event_id=event_id)
         if event is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+        if event.status == EventStatus.CANCELLED.value:
+            raise HTTPException(status.HTTP_409_CONFLICT, "A cancelled event cannot be reviewed")
+
+        if event.time > datetime.now(timezone.utc):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "You can review an event only after it has taken place"
+            )
 
         booking = await self.bookings.get(user_id=user.id, event_id=event_id)
         if booking is None or not booking.is_active:
