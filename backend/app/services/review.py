@@ -17,7 +17,7 @@ from app.schemas.review import (
 from sqlalchemy.exc import IntegrityError
 from app.schemas.user import UserBase
 
-from app.core.enums import UserRole
+from app.core.enums import UserRole, EventStatus
 
 from app.tasks.notifications import new_review, review_mentions, review_replied
 
@@ -48,7 +48,7 @@ class ReviewService:
                 not event.is_active
                 or (
                     user.id != event.organizer_id
-                    and event.status != "published"
+                    and event.status != EventStatus.PUBLISHED
                 )
             ):
                 raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view this review")
