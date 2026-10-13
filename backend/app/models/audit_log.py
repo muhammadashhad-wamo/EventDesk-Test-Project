@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Integer, func, DateTime
+from sqlalchemy import ForeignKey, String, Integer, func, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -9,6 +9,12 @@ from datetime import datetime
 class AuditLog(Base):
 
     __tablename__ = "audit_log"
+
+    __table_args__ = (
+        Index("ix_audit_log_created_at_id", "created_at", "id"),
+        Index("ix_audit_log_entity", "entity_type", "entity_id"),
+        Index("ix_audit_log_actor_created", "actor_id", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     actor_id: Mapped[int | None] = mapped_column(
