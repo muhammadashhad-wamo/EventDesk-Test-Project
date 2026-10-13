@@ -24,7 +24,7 @@ class EventService:
         self.venues = VenueRepository(db)
         self.tags = TagRepository(db)
         self.audit = AuditLogRepository(db)
-        self.categories = CategoryRepository
+        self.categories = CategoryRepository(db)
 
     async def list_events(
         self,
