@@ -21,6 +21,8 @@ from app.schemas.review import ReviewBase
 
 from app.core.enums import EventStatus
 
+from app.models.event import Event
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
@@ -63,12 +65,17 @@ def require_roles(*roles: UserRole):
 
 CurrentAdmin = Annotated[UserBase, Depends(require_roles(UserRole.ADMIN))]
 
-
-async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventResponse:
+async def _get_event_or_404(event_id: int, db: DbSession) -> Event:
     db_event = await EventRepository(db).get_by_id(event_id=event_id)
-
+    
     if db_event is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+    return db_event
+
+
+async def get_viewable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventResponse:
+    db_event = await _get_event_or_404(event_id=event_id, db=db)
 
     if (user.role == UserRole.USER) and (db_event.is_active == False or (user.id != db_event.organizer_id and db_event.status not in (EventStatus.PUBLISHED,))):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to view event")
@@ -79,10 +86,7 @@ GetViewableEvent = Annotated[EventResponse, Depends(get_viewable_event)]
 
 
 async def get_editable_event(event_id: int, user: CurrentUser, db: DbSession) -> EventResponse:
-    db_event = await EventRepository(db).get_by_id(event_id=event_id)
-
-    if db_event is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+    db_event = await _get_event_or_404(event_id=event_id, db=db)
 
     if (user.role == UserRole.USER) and (db_event.is_active == False or user.id != db_event.organizer_id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not allowed to edit event")
