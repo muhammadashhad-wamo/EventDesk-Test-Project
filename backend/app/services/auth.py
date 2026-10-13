@@ -11,6 +11,8 @@ from app.core.enums import UserRole
 
 from app.services.token import TokenService
 
+from sqlalchemy.exc import IntegrityError
+
 
 class AuthService:
     def __init__(self, db: AsyncSession) -> None:
@@ -29,9 +31,13 @@ class AuthService:
                 role=UserRole.USER,
             )
             await self.db.commit()
-        except:
+        except IntegrityError:
             await self.db.rollback()
-            raise
+            # Returning 409 in case of IntegrityError being raised due to duplicate emails
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Email already registered"
+            )
 
         user_schema = UserResponse.model_validate(db_user)
         return user_schema
