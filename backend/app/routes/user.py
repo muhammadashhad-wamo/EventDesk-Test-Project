@@ -75,11 +75,11 @@ async def get_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSessio
 
 @admin_router.patch("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(user_id: int, data: UserUpdate, current_admin: CurrentAdmin, db: DbSession):
-    return await UserService(db).update_by_id(id=user_id, data=data)
+    return await UserService(db).update_by_id(id=user_id, data=data, actor_id=current_admin.id)
 
 @admin_router.patch("/{user_id}/activate", response_model=UserResponse)
 async def activate_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
-    return await UserService(db).activate_by_id(id=user_id)
+    return await UserService(db).activate_by_id(id=user_id, actor_id=current_admin.id)
 
 @admin_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):

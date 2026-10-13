@@ -6,7 +6,10 @@ from app.repositories.user import UserRepository
 from app.schemas.user import UserUpdate, UserResponse, UserBase, ChangePasswordRequest, UserLookupResponse
 from app.core.security import verify_password, hash_password
 from app.repositories.refresh_token import RefreshTokenRepository
+from app.repositories.audit_log import AuditLogRepository
 from datetime import datetime, timezone
+
+from app.core.enums import AuditAction, AuditEntity
 
 
 class UserService:
@@ -14,6 +17,7 @@ class UserService:
         self._db = db
         self.users = UserRepository(db)
         self.tokens = RefreshTokenRepository(db)
+        self.audit = AuditLogRepository(db)
 
     async def get_by_id(self, id: int) -> UserResponse:
         db_user = await self.users.get_by_id(user_id=id)
@@ -26,7 +30,7 @@ class UserService:
 
         return UserResponse.model_validate(db_user)
 
-    async def update_by_id(self, id: int, data: UserUpdate) -> UserResponse:
+    async def update_by_id(self, id: int, data: UserUpdate, actor_id: int) -> UserResponse:
         db_user = await self.users.get_by_id(user_id=id)
         
         if not db_user:
@@ -49,6 +53,13 @@ class UserService:
         new_user = await self.users.update(
             data=update_data,
             user=db_user
+        )
+
+        await self.audit.create(
+            actor_id=actor_id,
+            action=AuditAction.USER_UPDATED,
+            entity_type=AuditEntity.USER,
+            entity_id=db_user.id
         )
 
         await self._db.commit()
@@ -103,6 +114,12 @@ class UserService:
             user_id=db_user.id,
             now=datetime.now(timezone.utc)
         )
+        await self.audit.create(
+            actor_id=actor_id,
+            action=AuditAction.USER_DEACTIVATED,
+            entity_type=AuditEntity.USER,
+            entity_id=db_user.id
+        )
         await self._db.commit()
 
     async def delete(self, *, user: UserBase) -> None:
@@ -112,9 +129,15 @@ class UserService:
             user_id=user.id,
             now=datetime.now(timezone.utc)
         )
+        await self.audit.create(
+            actor_id=user.id,
+            action=AuditAction.USER_DEACTIVATED,
+            entity_type=AuditEntity.USER,
+            entity_id=db_user.id
+        )
         await self._db.commit()
 
-    async def activate_by_id(self, id: int) -> UserResponse:
+    async def activate_by_id(self, id: int, actor_id: int) -> UserResponse:
         db_user = await self.users.get_by_id(user_id=id)
                 
         if not db_user:
@@ -134,6 +157,13 @@ class UserService:
         new_user = await self.users.update(
             data=update_data,
             user=db_user
+        )
+
+        await self.audit.create(
+            actor_id=actor_id,
+            action=AuditAction.USER_ACTIVATED,
+            entity_type=AuditEntity.USER,
+            entity_id=db_user.id
         )
 
         await self._db.commit()
