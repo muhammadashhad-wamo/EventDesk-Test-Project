@@ -9,10 +9,11 @@ from app.repositories.notification import NotificationRepository
 from app.schemas.notification import NotificationCreate
 from app.tasks.notifications import push, to_payloads
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
-REMINDER_LEAD_TIME = timedelta(hours=24)
-JOB_INTERVAL_SECONDS = 300
+REMINDER_LEAD_TIME = timedelta(hours=settings.EVENT_REMINDER_LEAD_TIME_HOURS)
 
 
 async def send_event_reminders() -> None:
@@ -63,8 +64,8 @@ async def _run_every(seconds: float, job) -> None:
 
 def start_scheduled_jobs() -> list[asyncio.Task]:
     return [
-        asyncio.create_task(_run_every(JOB_INTERVAL_SECONDS, send_event_reminders), name="send_event_reminders"),
-        asyncio.create_task(_run_every(JOB_INTERVAL_SECONDS, complete_past_events), name="complete_past_events"),
+        asyncio.create_task(_run_every(settings.JOB_INTERVAL_SECONDS, send_event_reminders), name="send_event_reminders"),
+        asyncio.create_task(_run_every(settings.JOB_INTERVAL_SECONDS, complete_past_events), name="complete_past_events"),
     ]
 
 
