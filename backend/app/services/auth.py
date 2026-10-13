@@ -18,13 +18,13 @@ class AuthService:
         self.users = UserRepository(db)
 
     async def register(self, data: RegisterRequest) -> UserResponse:
-        if await self.users.get_by_email(data.email):
+        if await self.users.get_by_email(data.email.lower()):
             raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
         try:
             db_user = await self.users.create(
                 name=data.name,
-                email=data.email,
+                email=data.email.lower(),
                 password_hash=hash_password(data.password.get_secret_value()),
                 role=UserRole.USER,
             )
