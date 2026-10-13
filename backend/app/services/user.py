@@ -59,11 +59,11 @@ class UserService:
         
 
     async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
-        update_data = data.model_dump(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True, exclude_none=True)
 
         if "email" in update_data:
             db_email_user = await self.users.get_by_email(update_data.get("email"))
-            if db_email_user:
+            if db_email_user and db_email_user.id != user.id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="The given email is already associated with an account"
