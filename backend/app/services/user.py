@@ -76,7 +76,13 @@ class UserService:
         await self._db.commit()
         return UserResponse.model_validate(new_user)
 
-    async def delete_by_id(self, *, id: int) -> None:
+    async def delete_by_id(self, *, id: int, actor_id: int | None = None) -> None:
+        if actor_id is not None and id == actor_id:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Admins cannot deactivate their own account"
+            )
+
         db_user = await self.users.get_by_id(user_id=id)
                 
         if not db_user:
