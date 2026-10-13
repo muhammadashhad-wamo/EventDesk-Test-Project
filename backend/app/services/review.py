@@ -199,3 +199,30 @@ class ReviewService:
             raise
 
         return ReplyResponse.model_validate(reply)
+
+    async def delete_reply(
+        self,
+        *,
+        user: UserBase,
+        reply_id: int,
+    ) -> None:
+        reply = await self.reviews.get_reply_by_id(reply_id)
+
+        if reply is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reply not found",
+            )
+
+        if user.role != UserRole.ADMIN and reply.user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to delete this reply",
+            )
+
+        try:
+            await self.reviews.delete_reply(reply=reply)
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise

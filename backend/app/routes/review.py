@@ -53,3 +53,17 @@ async def edit_reply(
     db: DbSession,
 ):
     return await ReviewService(db).update_reply(user=user, reply_id=reply_id, data=data)
+
+@router.delete(
+    "/replies/{reply_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_reply(
+    reply_id: int,
+    user: CurrentUser,
+    db: DbSession,
+):
+    await ReviewService(db).delete_reply(
+        user=user,
+        reply_id=reply_id,
+    )
