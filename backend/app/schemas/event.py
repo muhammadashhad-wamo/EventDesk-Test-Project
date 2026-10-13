@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, FutureDatetime
 from app.core.enums import EventStatus
 from typing import Annotated, Any
 
@@ -29,7 +29,7 @@ class EventCreate(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     title: Annotated[str, Field(min_length=1, max_length=50)]
-    time: datetime
+    time: FutureDatetime
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus = EventStatus.DRAFT
     category_id: int | None = None
@@ -42,7 +42,7 @@ class EventUpdate(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     title: Annotated[str, Field(min_length=1, max_length=50)] | None = None
-    time: datetime | None = None
+    time: FutureDatetime | None = None
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus | None = None
     category_id: int | None = None
