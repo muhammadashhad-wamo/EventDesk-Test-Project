@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, SecretStr
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     email: EmailStr = Field(max_length=255)
-    password: SecretStr = Field(min_length=8, max_length=20)
+    password: SecretStr = Field(min_length=8, max_length=128)
 
 
     @field_validator("email")

@@ -31,8 +31,8 @@ class UserUpdate(BaseModel):
         return v.strip().lower() if v else v
 
 class ChangePasswordRequest(BaseModel):
-    current_password: SecretStr = Field(min_length=8, max_length=20)
-    new_password: SecretStr = Field(min_length=8, max_length=20)
+    current_password: SecretStr = Field(min_length=8, max_length=128)
+    new_password: SecretStr = Field(min_length=8, max_length=128)
 
     @field_validator("new_password")
     @classmethod
