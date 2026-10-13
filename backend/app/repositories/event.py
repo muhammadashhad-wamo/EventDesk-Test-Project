@@ -182,6 +182,7 @@ class EventRepository:
             db_event.tags = tags
 
         await self.db.flush()
+        await self.db.refresh(db_event)
         return db_event
 
     async def delete(self, *, event: Event) -> None:
