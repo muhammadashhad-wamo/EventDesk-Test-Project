@@ -82,7 +82,7 @@ async def activate_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbS
     return await UserService(db).activate_by_id(id=user_id)
 
 @admin_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, current_admin: CurrentAdmin, db: DbSession):
+async def delete_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
     await UserService(db).delete_by_id(id=user_id, actor_id=current_admin.id)
 
 @admin_router.patch("/{user_id}/role", response_model=AdminUserResponse)
