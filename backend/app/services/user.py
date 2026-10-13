@@ -39,9 +39,10 @@ class UserService:
                 detail="User not found"
             )
 
-        update_data = data.model_dump(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True, exclude_none=True)
 
         if "email" in update_data:
+            update_data["email"] = update_data["email"].lower()
             db_email_user = await self.users.get_by_email(update_data.get("email"))
             if db_email_user:
                 raise HTTPException(
@@ -62,6 +63,7 @@ class UserService:
         update_data = data.model_dump(exclude_unset=True, exclude_none=True)
 
         if "email" in update_data:
+            update_data["email"] = update_data["email"].lower()
             db_email_user = await self.users.get_by_email(update_data.get("email"))
             if db_email_user and db_email_user.id != user.id:
                 raise HTTPException(
