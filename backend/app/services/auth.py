@@ -45,7 +45,17 @@ class AuthService:
     async def login(self, email: str, password: str) -> TokenPair:
         user = await self.users.get_by_email(email.lower())
 
-        if not user or not verify_password(password, user.password_hash):
+        if not user:
+            # Comparing password with a dummy hash so this request takes the same time as a request having a valid user email
+            dummy_hash = '$argon2id$v=19$m=65536,t=3,p=4$RV6/TvbzVF0ycuhUy3shDA$dPY54HbTwgWxeHV9ksb2skobyIibvPQ2iQ7uCTboums'
+            verify_password(password, dummy_hash)
+            raise HTTPException(
+                    status.HTTP_401_UNAUTHORIZED,
+                    "Incorrect email or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+        if not verify_password(password, user.password_hash):
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Incorrect email or password",
