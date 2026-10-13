@@ -21,6 +21,9 @@ class ReplyResponse(BaseModel):
 class ReplyCreate(BaseModel):
     comment: str = Field(min_length=1, max_length=200)
 
+class ReplyUpdate(BaseModel):
+    comment: str = Field(min_length=1, max_length=200)
+
 class ReviewBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     

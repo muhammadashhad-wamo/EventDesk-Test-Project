@@ -6,7 +6,8 @@ from app.schemas.review import (
     ReviewCreate,
     ReviewUpdate,
     ReplyResponse,
-    ReplyCreate
+    ReplyCreate,
+    ReplyUpdate
 )
 from app.services.review import ReviewService
 
@@ -43,3 +44,12 @@ async def delete_review(review_id: int, review: GetEditableReview, db: DbSession
 )
 async def reply_to_review(review_id: int, data: ReplyCreate, user: CurrentUser, db: DbSession, background_tasks: BackgroundTasks):
     return await ReviewService(db).reply(user=user, review_id=review_id, data=data, background=background_tasks)
+
+@router.patch("/replies/{reply_id}", response_model=ReplyResponse)
+async def edit_reply(
+    reply_id: int,
+    data: ReplyUpdate,
+    user: CurrentUser,
+    db: DbSession,
+):
+    return await ReviewService(db).update_reply(user=user, reply_id=reply_id, data=data)

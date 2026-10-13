@@ -11,7 +11,8 @@ from app.schemas.review import (
     ReviewUpdate,
     ReviewBase,
     ReplyCreate,
-    ReplyResponse
+    ReplyResponse,
+    ReplyUpdate
 )
 from sqlalchemy.exc import IntegrityError
 from app.schemas.user import UserBase
@@ -162,5 +163,39 @@ class ReviewService:
                 event_id=event_id,
                 event_title=event_title,
             )
+
+        return ReplyResponse.model_validate(reply)
+
+    
+    async def update_reply(
+        self,
+        *,
+        user: UserBase,
+        reply_id: int,
+        data: ReplyUpdate,
+    ) -> ReplyResponse:
+        reply = await self.reviews.get_reply_by_id(reply_id)
+
+        if reply is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reply not found",
+            )
+
+        if user.role != UserRole.ADMIN and reply.user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to modify this reply",
+            )
+
+        try:
+            reply = await self.reviews.update_reply(
+                reply=reply,
+                comment=data.comment,
+            )
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
 
         return ReplyResponse.model_validate(reply)

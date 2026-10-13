@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.models.review import Review
 from app.models.review_reply import ReviewReply
@@ -61,3 +62,25 @@ class ReviewRepository:
         review.replies.append(reply)
         await self.db.flush()
         return reply
+
+    async def get_reply_by_id(self, reply_id: int) -> ReviewReply | None:
+        statement = (
+            select(ReviewReply)
+            .where(ReviewReply.id == reply_id)
+            .options(
+                joinedload(ReviewReply.review).joinedload(Review.event),
+            )
+        )
+        result = await self.db.execute(statement)
+        return result.unique().scalar_one_or_none()
+
+    async def update_reply(
+        self, *, reply: ReviewReply, comment: str
+    ) -> ReviewReply:
+        reply.comment = comment
+        await self.db.flush()
+        return reply
+
+    async def delete_reply(self, *, reply: ReviewReply) -> None:
+        await self.db.delete(reply)
+        await self.db.flush()
