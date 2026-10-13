@@ -26,10 +26,6 @@ class UserService:
 
         return UserResponse.model_validate(db_user)
 
-    async def get_users(self) -> list[UserResponse]:
-        db_users = await self.users.get_all()
-        return [UserResponse.model_validate(user) for user in db_users]
-
     async def update_by_id(self, id: int, data: UserUpdate) -> UserResponse:
         db_user = await self.users.get_by_id(user_id=id)
         
