@@ -59,7 +59,7 @@ class UserService:
         return UserResponse.model_validate(new_user)
         
 
-    async def update(self, *, data: UserUpdate, user: UserUpdate) -> UserResponse:
+    async def update(self, *, data: UserUpdate, user: UserBase) -> UserResponse:
         update_data = data.model_dump(exclude_unset=True, exclude_none=True)
 
         if "email" in update_data:
