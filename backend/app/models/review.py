@@ -15,10 +15,12 @@ class Review(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_account.id")
+        ForeignKey("user_account.id"),
+        index=True
     )
     event_id: Mapped[int] = mapped_column(
-        ForeignKey("event.id")
+        ForeignKey("event.id"),
+        index=True
     )
     stars_count: Mapped[int] = mapped_column(Integer, nullable=False)
     comment: Mapped[str | None] = mapped_column(String(200))
