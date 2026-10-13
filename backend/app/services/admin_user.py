@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import AuditAction, AuditEntity, UserRole
 from app.repositories.audit_log import AuditLogRepository
 from app.repositories.user import UserRepository
-from app.schemas.admin_user import AdminUserResponse
-from app.schemas.user import UserBase
+from app.schemas.user import UserBase, UserResponse
 from app.schemas.pagination import Page, PaginationParams
 
 
@@ -22,7 +21,7 @@ class AdminUserService:
         search: str | None,
         role: UserRole | None,
         is_active: bool | None,
-    ) -> Page[AdminUserResponse]:
+    ) -> Page[UserResponse]:
         db_users, total = await self.users.search(
             search=search,
             role=role,
@@ -30,14 +29,14 @@ class AdminUserService:
             limit=pagination.limit,
             offset=pagination.offset,
         )
-        return Page[AdminUserResponse](
-            items=[AdminUserResponse.model_validate(u) for u in db_users],
+        return Page[UserResponse](
+            items=[UserResponse.model_validate(u) for u in db_users],
             total=total,
             limit=pagination.limit,
             offset=pagination.offset,
         )
 
-    async def change_role(self, *, actor: UserBase, user_id: int, role: UserRole) -> AdminUserResponse:
+    async def change_role(self, *, actor: UserBase, user_id: int, role: UserRole) -> UserResponse:
         if user_id == actor.id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Admins cannot change their own role")
 
@@ -61,4 +60,4 @@ class AdminUserService:
             await self._db.rollback()
             raise
 
-        return AdminUserResponse.model_validate(user)
+        return UserResponse.model_validate(user)

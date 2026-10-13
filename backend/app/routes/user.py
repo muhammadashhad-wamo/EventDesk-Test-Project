@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, status, Query
 
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest, UserLookupResponse
-from app.schemas.admin_user import RoleUpdate, AdminUserResponse
+from app.schemas.admin_user import RoleUpdate
 
 from app.services.user import UserService
 from app.services.admin_user import AdminUserService
@@ -56,7 +56,7 @@ async def lookup_users(
 
 
 ############## Admin routes ##################
-@admin_router.get("", response_model=Page[AdminUserResponse])
+@admin_router.get("", response_model=Page[UserResponse])
 async def list_users(
     current_admin: CurrentAdmin,
     db: DbSession,
@@ -85,6 +85,6 @@ async def activate_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbS
 async def delete_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
     await UserService(db).delete_by_id(id=user_id, actor_id=current_admin.id)
 
-@admin_router.patch("/{user_id}/role", response_model=AdminUserResponse)
+@admin_router.patch("/{user_id}/role", response_model=UserResponse)
 async def change_user_role(user_id: int, data: RoleUpdate, current_admin: CurrentAdmin, db: DbSession):
     return await AdminUserService(db).change_role(actor=current_admin, user_id=user_id, role=data.role)
