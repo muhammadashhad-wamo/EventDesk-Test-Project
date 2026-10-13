@@ -5,12 +5,15 @@ from app.models.user import User as User
 from app.repositories.user import UserRepository
 from app.schemas.user import UserUpdate, UserResponse, UserBase, ChangePasswordRequest, UserLookupResponse
 from app.core.security import verify_password, hash_password
+from app.repositories.refresh_token import RefreshTokenRepository
+from datetime import datetime, timezone
 
 
 class UserService:
     def __init__(self, db: AsyncSession):
         self._db = db
         self.users = UserRepository(db)
+        self.tokens = RefreshTokenRepository(db)
 
     async def get_by_id(self, id: int) -> UserResponse:
         db_user = await self.users.get_by_id(user_id=id)
@@ -98,11 +101,19 @@ class UserService:
             )
         
         await self.users.delete(user=db_user)
+        await self.tokens.revoke_all_for_user(
+            user_id=db_user.id,
+            now=datetime.now(timezone.utc)
+        )
         await self._db.commit()
 
     async def delete(self, *, user: UserBase) -> None:
         db_user = User(**user.model_dump())
         await self.users.delete(user=db_user)
+        await self.tokens.revoke_all_for_user(
+            user_id=user.id,
+            now=datetime.now(timezone.utc)
+        )
         await self._db.commit()
 
     async def activate_by_id(self, id: int) -> UserResponse:
@@ -141,6 +152,10 @@ class UserService:
 
         db_user = User(**user.model_dump())
         await self.users.update_password(user=db_user, new_password_hash=new_password_hash)
+        await self.tokens.revoke_all_for_user(
+            user_id=user.id,
+            now=datetime.now(timezone.utc)
+        )
         await self._db.commit()
 
     async def search_active_by_name(self, *, search: str, limit: int) -> list[UserLookupResponse]:
