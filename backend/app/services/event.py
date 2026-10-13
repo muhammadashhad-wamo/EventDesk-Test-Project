@@ -170,6 +170,19 @@ class EventService:
 
         update_data = data.model_dump(exclude_unset=True)
 
+        new_status = update_data.get("status")
+        if new_status is not None and new_status != db_event.status:
+            if db_event.status in (EventStatus.CANCELLED.value, EventStatus.COMPLETED.value):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"Event is already {db_event.status}"
+                )
+            if new_status == EventStatus.CANCELLED.value and action != AuditAction.EVENT_CANCELLED:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Use PATCH /events/{id}/cancel to cancel an event")
+
+        if update_data.get("time") is not None:
+            self._ensure_future(update_data["time"])
+
         tag_ids = update_data.pop("tag_ids", None)
         tags = await self._get_tags(tag_ids) if tag_ids is not None else None
 
