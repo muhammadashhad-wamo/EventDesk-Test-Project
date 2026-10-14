@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_MAX_REQUESTS: int = 30
     RATE_LIMIT_WINDOW_SECONDS: int =60
     WEBSOCKET_SEND_TIMEOUT_SECONDS: float = 5.0
+    WEBSOCKET_AUTH_TIMEOUT_SECONDS: int = 10
+    WEBSOCKET_RECHECK_INTERVAL_SECONDS: int = 30
+    WEBSOCKET_IDLE_TIMEOUT_SECONDS: int = 120
+    WEBSOCKET_MAX_MESSAGE_CHARS: int = 4096
 
     model_config = SettingsConfigDict(
         env_file=(
