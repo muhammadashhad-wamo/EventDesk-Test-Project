@@ -1,4 +1,4 @@
-from sqlalchemy import String, Boolean, func, Index
+from sqlalchemy import String, Boolean, func, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,6 +21,7 @@ class Venue(Base):
                 func.lower(func.btrim(street)),
                 func.lower(func.btrim(city)),
                 func.lower(func.btrim(country)),
+                postgresql_where=text("is_active"),
                 unique=True,
             ),
         )
