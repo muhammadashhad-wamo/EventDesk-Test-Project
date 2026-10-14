@@ -44,7 +44,7 @@ class RefreshTokenRepository:
         await self.db.execute(statement)
 
     async def revoke_if_active(self, *, token_id: int, now: datetime) -> bool:
-        result = await self._db.execute(
+        result = await self.db.execute(
             update(RefreshToken)
             .where(RefreshToken.id == token_id, RefreshToken.revoked_at.is_(None))
             .values(revoked_at=now)
@@ -53,7 +53,7 @@ class RefreshTokenRepository:
         return result.rowcount == 1
 
     async def delete_expired(self, *, now: datetime) -> int:
-        result = await self._db.execute(
+        result = await self.db.execute(
             delete(RefreshToken)
             .where(RefreshToken.expires_at <= now)
             .execution_options(synchronize_session=False)
