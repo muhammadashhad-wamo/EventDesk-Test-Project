@@ -69,9 +69,9 @@ class VenueService:
         try:
             venue = await self.venues.update(venue=venue, data=data.model_dump(exclude_none=True))
             await self._db.commit()
-        except Exception:
+        except IntegrityError:
             await self._db.rollback()
-            raise
+            raise HTTPException(status.HTTP_409_CONFLICT, "Venue already exists")
         return VenueResponse.model_validate(venue)
 
     async def delete(self, *, venue_id: int) -> None:
