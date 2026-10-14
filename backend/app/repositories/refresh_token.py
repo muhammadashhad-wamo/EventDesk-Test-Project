@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.refresh_token import RefreshToken
@@ -42,3 +42,20 @@ class RefreshTokenRepository:
             .values(revoked_at=now)
         )
         await self.db.execute(statement)
+
+    async def revoke_if_active(self, *, token_id: int, now: datetime) -> bool:
+        result = await self._db.execute(
+            update(RefreshToken)
+            .where(RefreshToken.id == token_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=now)
+            .execution_options(synchronize_session=False)
+        )
+        return result.rowcount == 1
+
+    async def delete_expired(self, *, now: datetime) -> int:
+        result = await self._db.execute(
+            delete(RefreshToken)
+            .where(RefreshToken.expires_at <= now)
+            .execution_options(synchronize_session=False)
+        )
+        return result.rowcount

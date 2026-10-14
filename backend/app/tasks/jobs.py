@@ -8,6 +8,7 @@ from app.repositories.event import EventRepository
 from app.repositories.notification import NotificationRepository
 from app.schemas.notification import NotificationCreate
 from app.tasks.notifications import push, to_payloads
+from app.repositories.refresh_token import RefreshTokenRepository
 
 from app.core.config import settings
 
@@ -52,6 +53,13 @@ async def complete_past_events() -> None:
     if completed:
         logger.info("Marked %d event(s) as completed", completed)
 
+async def purge_expired_refresh_tokens() -> None:
+    now = datetime.now(timezone.utc)
+    async with AsyncSessionLocal() as db:
+        deleted = await RefreshTokenRepository(db).delete_expired(now=now)
+        await db.commit()
+    if deleted:
+        logger.info("Deleted %d expired refresh token(s)", deleted)
 
 async def _run_every(seconds: float, job) -> None:
     while True:
@@ -66,6 +74,7 @@ def start_scheduled_jobs() -> list[asyncio.Task]:
     return [
         asyncio.create_task(_run_every(settings.JOB_INTERVAL_SECONDS, send_event_reminders), name="send_event_reminders"),
         asyncio.create_task(_run_every(settings.JOB_INTERVAL_SECONDS, complete_past_events), name="complete_past_events"),
+        asyncio.create_task(_run_every(settings.JOB_INTERVAL_SECONDS, purge_expired_refresh_tokens), name="purge_expired_refresh_tokens"),
     ]
 
 

@@ -56,12 +56,18 @@ class TokenService:
             raise invalid
 
         try:
-            record.revoked_at = now
-            pair = await self._create_pair(user.id)
+            revoked = await self.tokens.revoke_if_active(token_id=record.id, now=now)
+            if revoked:
+                pair = await self._create_pair(user.id)
+            else:
+                await self.tokens.revoke_all_for_user(user_id=record.user_id, now=now)
             await self._db.commit()
         except Exception:
             await self._db.rollback()
             raise
+
+        if not revoked:
+            raise invalid
         return pair
 
     async def _create_pair(self, user_id: int) -> TokenPair:
