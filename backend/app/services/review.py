@@ -91,6 +91,11 @@ class ReviewService:
 
         db_user = await self.users.get_by_id(user.id)
 
+        if data.mentioned_user_ids:
+            data.mentioned_user_ids = await self._validate_mentions(
+                event_id=event_id, mentioned_user_ids=data.mentioned_user_ids
+            )
+
         try:
             review = await self.reviews.create(
                 user=db_user,
@@ -246,3 +251,18 @@ class ReviewService:
         except Exception:
             await self._db.rollback()
             raise
+
+    async def _validate_mentions(self, *, event_id: int, mentioned_user_ids: list[int]) -> list[int]:
+        unique_ids = list(dict.fromkeys(mentioned_user_ids))
+        if not unique_ids:
+            return []
+        involved = await self.events.get_involved_user_ids(
+            event_id=event_id, candidate_ids=unique_ids
+        )
+        invalid = sorted(set(unique_ids) - involved)
+        if invalid:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                f"Users not involved in this event cannot be mentioned: {invalid}",
+            )
+        return unique_ids
