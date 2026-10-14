@@ -42,6 +42,11 @@ class VenueService:
         return VenueResponse.model_validate(venue)
 
     async def create(self, *, data: VenueCreate) -> VenueResponse:
+        if await self.venues.exists_duplicate(
+            title=data.title, street=data.street, city=data.city, country=data.country
+        ):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Venue already exists")
+
         try:
             venue = await self.venues.create(
                 title=data.title,
