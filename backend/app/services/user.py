@@ -53,7 +53,7 @@ class UserService:
 
         new_user = await self.users.update(
             data=update_data,
-            user=db_user
+            db_user=db_user
         )
 
         await self.audit.create(
