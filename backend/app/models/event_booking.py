@@ -14,8 +14,7 @@ class EventBooking(Base):
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user_account.id"),
-        primary_key=True,
-        index=True
+        primary_key=True
     )
     event_id: Mapped[int] = mapped_column(
         ForeignKey("event.id"),
