@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     EVENT_REMINDER_LEAD_TIME_HOURS: int = 24
     RATE_LIMIT_MAX_REQUESTS: int = 30
     RATE_LIMIT_WINDOW_SECONDS: int =60
+    WEBSOCKET_SEND_TIMEOUT_SECONDS: float = 5.0
 
     model_config = SettingsConfigDict(
         env_file=(
