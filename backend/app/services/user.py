@@ -96,8 +96,8 @@ class UserService:
         except IntegrityError:
             await self._db.rollback()
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The given email is already associated with an account"
             )
         return UserResponse.model_validate(new_user)
 
