@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.repositories.venue import VenueRepository
 from app.schemas.pagination import Page, PaginationParams
@@ -55,9 +56,9 @@ class VenueService:
                 country=data.country,
             )
             await self._db.commit()
-        except Exception:
+        except IntegrityError:
             await self._db.rollback()
-            raise
+            raise HTTPException(status.HTTP_409_CONFLICT, "Venue already exists")
         return VenueResponse.model_validate(venue)
 
     async def update(self, *, venue_id: int, data: VenueUpdate) -> VenueResponse:
