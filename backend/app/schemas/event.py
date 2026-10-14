@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator, FutureDatetime
 from app.core.enums import EventStatus
-from typing import Annotated
+from typing import Annotated, Any
 
 from datetime import datetime
 from decimal import Decimal
@@ -29,7 +29,7 @@ class EventCreate(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     title: Annotated[str, Field(min_length=1, max_length=50)]
-    time: datetime
+    time: FutureDatetime
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus = EventStatus.DRAFT
     category_id: int | None = None
@@ -42,7 +42,7 @@ class EventUpdate(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     title: Annotated[str, Field(min_length=1, max_length=50)] | None = None
-    time: datetime | None = None
+    time: FutureDatetime | None = None
     description: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     status: EventStatus | None = None
     category_id: int | None = None
@@ -50,6 +50,13 @@ class EventUpdate(BaseModel):
     available_tickets_count: Annotated[int, Field(ge=0)] | None = None
     venue_id: int | None = None
     tag_ids: list[int] | None = Field(default=None, max_length=20)
+
+    @field_validator("title", "time", "ticket_price", "available_tickets_count", mode="before")
+    @classmethod
+    def reject_explicit_null(cls, value: Any, info) -> Any:
+        if value is None:
+            raise ValueError(f"Field '{info.field_name}' cannot be explicitly set to null")
+        return value
 
 class EventResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)

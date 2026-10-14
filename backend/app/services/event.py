@@ -15,9 +15,14 @@ from app.schemas.event_filters import EventFilters
 from app.schemas.pagination import Page, PaginationParams
 from app.schemas.user import UserBase
 from app.tasks.notifications import event_cancelled
+from app.realtime.manager import manager
 
 from datetime import datetime, timezone
 
+ALLOWED_STATUS_TRANSITIONS: dict[EventStatus, set[EventStatus]] = {
+    EventStatus.DRAFT: {EventStatus.PUBLISHED},
+    EventStatus.PUBLISHED: {EventStatus.DRAFT, EventStatus.COMPLETED},
+}
 
 class EventService:
     def __init__(self, db: AsyncSession):
@@ -96,33 +101,59 @@ class EventService:
         return EventResponse.model_validate(db_event)
 
     async def update_by_id(self, id: int, data: EventUpdate, actor: UserBase) -> EventResponse:
+        if data.status == EventStatus.CANCELLED:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Use PATCH /events/{id}/cancel to cancel an event",
+            )
         return await self._update_and_audit(
             id=id, data=data, actor=actor, action=AuditAction.EVENT_UPDATED
         )
 
     async def cancel_event_by_id(self, id: int, actor: UserBase, background: BackgroundTasks) -> EventResponse:
-        db_event = await self.events.get_by_id(event_id=id)
+        try:
+            event = await self.events.get_by_id_for_update_with_bookings(id)
 
-        if not db_event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Event not found"
+            if event is None or not event.is_active:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+
+            if event.status in (EventStatus.CANCELLED.value, EventStatus.COMPLETED.value):
+                raise HTTPException(status.HTTP_409_CONFLICT, f"Event is already {event.status}")
+
+            attendee_ids: list[int] = []
+            for booking in event.bookings:
+                if booking.is_active:
+                    booking.is_active = False
+                    event.available_tickets_count += booking.tickets_count
+                    attendee_ids.append(booking.user_id)
+
+            event.status = EventStatus.CANCELLED.value
+
+            await self.audit.create(
+                actor_id=actor.id,
+                action=AuditAction.EVENT_CANCELLED,
+                entity_type=AuditEntity.EVENT,
+                entity_id=event.id,
             )
 
-        if db_event.status in (EventStatus.CANCELLED.value, EventStatus.COMPLETED.value):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Event is already {db_event.status}"
-            )
+            event_title = event.title
+            available = event.available_tickets_count
 
-        response = await self._update_and_audit(
-            id=id,
-            data=EventUpdate(status=EventStatus.CANCELLED),
-            actor=actor,
-            action=AuditAction.EVENT_CANCELLED,
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            raise
+
+        background.add_task(
+            event_cancelled, event_id=id, event_title=event_title, user_ids=attendee_ids
         )
-        background.add_task(event_cancelled, event_id=id)
-        return response
+        background.add_task(
+            manager.broadcast_to_event,
+            id,
+            {"type": "tickets_updated", "event_id": id, "available_tickets_count": available},
+        )
+
+        return EventResponse.model_validate(event)
 
     async def delete_by_id(self, *, id: int, actor: UserBase) -> None:
         db_event = await self.events.get_by_id(event_id=id, get_deleted=True)
@@ -160,9 +191,9 @@ class EventService:
         actor: UserBase,
         action: AuditAction,
     ) -> EventResponse:
-        db_event = await self.events.get_by_id(event_id=id)
+        db_event = await self.events.get_by_id_for_update_with_bookings(id)
 
-        if not db_event:
+        if not db_event or not db_event.is_active:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Event not found"
@@ -179,6 +210,23 @@ class EventService:
                 )
             if new_status == EventStatus.CANCELLED.value and action != AuditAction.EVENT_CANCELLED:
                 raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Use PATCH /events/{id}/cancel to cancel an event")
+
+            current_status = EventStatus(db_event.status)
+            target_status = EventStatus(new_status)
+
+            if target_status not in ALLOWED_STATUS_TRANSITIONS.get(current_status, set()):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"Cannot change status from {current_status.value} to {target_status.value}",
+                )
+
+            if target_status == EventStatus.DRAFT and any(
+                booking.is_active for booking in db_event.bookings
+            ):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    "Cannot move a published event back to draft while it has active bookings",
+                )
 
         if update_data.get("time") is not None:
             self._ensure_future(update_data["time"])

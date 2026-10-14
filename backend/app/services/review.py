@@ -21,6 +21,10 @@ from app.core.enums import UserRole, EventStatus
 
 from app.tasks.notifications import new_review, review_mentions, review_replied
 
+from datetime import datetime, timezone
+
+from app.schemas.pagination import Page, PaginationParams
+
 
 class ReviewService:
     def __init__(self, db: AsyncSession):
@@ -30,12 +34,20 @@ class ReviewService:
         self.bookings = BookingRepository(db)
         self.users = UserRepository(db)
 
-    async def get_event_reviews(self, *, event_id: int) -> list[ReviewResponse]:
-        event = await self.events.get_by_id_with_reviews(event_id)
-        if event is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
-
-        return [ReviewResponse.model_validate(review) for review in event.reviews]
+    async def get_event_reviews(
+        self, *, event_id: int, pagination: PaginationParams
+    ) -> Page[ReviewResponse]:
+        # the route's GetViewableEvent dependency already guarantees the event exists
+        # and is visible to this user
+        db_reviews, total = await self.reviews.get_by_event(
+            event_id=event_id, limit=pagination.limit, offset=pagination.offset
+        )
+        return Page[ReviewResponse](
+            items=[ReviewResponse.model_validate(review) for review in db_reviews],
+            total=total,
+            limit=pagination.limit,
+            offset=pagination.offset,
+        )
 
     async def get_review_by_id(self, *, user: UserBase, review_id: int) -> ReviewResponse:
         review = await self.reviews.get_by_id(review_id)
@@ -60,6 +72,14 @@ class ReviewService:
         if event is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
 
+        if event.status == EventStatus.CANCELLED.value:
+            raise HTTPException(status.HTTP_409_CONFLICT, "A cancelled event cannot be reviewed")
+
+        if event.time > datetime.now(timezone.utc):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "You can review an event only after it has taken place"
+            )
+
         booking = await self.bookings.get(user_id=user.id, event_id=event_id)
         if booking is None or not booking.is_active:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "You can only review events you have booked")
@@ -70,6 +90,11 @@ class ReviewService:
         organizer_id, event_title = event.organizer_id, event.title
 
         db_user = await self.users.get_by_id(user.id)
+
+        if data.mentioned_user_ids:
+            data.mentioned_user_ids = await self._validate_mentions(
+                event_id=event_id, mentioned_user_ids=data.mentioned_user_ids
+            )
 
         try:
             review = await self.reviews.create(
@@ -226,3 +251,18 @@ class ReviewService:
         except Exception:
             await self._db.rollback()
             raise
+
+    async def _validate_mentions(self, *, event_id: int, mentioned_user_ids: list[int]) -> list[int]:
+        unique_ids = list(dict.fromkeys(mentioned_user_ids))
+        if not unique_ids:
+            return []
+        involved = await self.events.get_involved_user_ids(
+            event_id=event_id, candidate_ids=unique_ids
+        )
+        invalid = sorted(set(unique_ids) - involved)
+        if invalid:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                f"Users not involved in this event cannot be mentioned: {invalid}",
+            )
+        return unique_ids

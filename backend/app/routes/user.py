@@ -1,8 +1,8 @@
 from typing import Annotated
-from fastapi import APIRouter, status, Query
+from fastapi import APIRouter, status, Query, Depends
 
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest, UserLookupResponse
-from app.schemas.admin_user import RoleUpdate, AdminUserResponse
+from app.schemas.admin_user import RoleUpdate
 
 from app.services.user import UserService
 from app.services.admin_user import AdminUserService
@@ -13,9 +13,13 @@ from app.core.dependencies import DbSession
 from app.schemas.pagination import Page, Pagination
 
 from app.core.enums import UserRole
+from app.core.rate_limit import RateLimiter
+from app.core.config import settings
 
 router = APIRouter(prefix="/users", tags=["users"])
 admin_router = APIRouter(prefix="/admin/users", tags=["admin", "users"])
+
+lookup_rate_limit = RateLimiter(max_requests=settings.RATE_LIMIT_MAX_REQUESTS, window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS)
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: CurrentUser):
@@ -45,7 +49,7 @@ async def delete_current_user(
 async def change_password(data: ChangePasswordRequest, current_user: CurrentUser, db: DbSession):
     await UserService(db).update_password(user=current_user, data=data)
 
-@router.get("/lookup", response_model=list[UserLookupResponse])
+@router.get("/lookup", response_model=list[UserLookupResponse], dependencies=[Depends(lookup_rate_limit)])
 async def lookup_users(
     user: CurrentUser,
     db: DbSession,
@@ -56,7 +60,7 @@ async def lookup_users(
 
 
 ############## Admin routes ##################
-@admin_router.get("/", response_model=Page[AdminUserResponse])
+@admin_router.get("", response_model=Page[UserResponse])
 async def list_users(
     current_admin: CurrentAdmin,
     db: DbSession,
@@ -75,16 +79,16 @@ async def get_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSessio
 
 @admin_router.patch("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(user_id: int, data: UserUpdate, current_admin: CurrentAdmin, db: DbSession):
-    return await UserService(db).update_by_id(id=user_id, data=data)
+    return await UserService(db).update_by_id(id=user_id, data=data, actor_id=current_admin.id)
 
 @admin_router.patch("/{user_id}/activate", response_model=UserResponse)
 async def activate_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
-    return await UserService(db).activate_by_id(id=user_id)
+    return await UserService(db).activate_by_id(id=user_id, actor_id=current_admin.id)
 
 @admin_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, current_admin: CurrentAdmin, db: DbSession):
+async def delete_user_by_id(user_id: int, current_admin: CurrentAdmin, db: DbSession):
     await UserService(db).delete_by_id(id=user_id, actor_id=current_admin.id)
 
-@admin_router.patch("/{user_id}/role", response_model=AdminUserResponse)
+@admin_router.patch("/{user_id}/role", response_model=UserResponse)
 async def change_user_role(user_id: int, data: RoleUpdate, current_admin: CurrentAdmin, db: DbSession):
     return await AdminUserService(db).change_role(actor=current_admin, user_id=user_id, role=data.role)

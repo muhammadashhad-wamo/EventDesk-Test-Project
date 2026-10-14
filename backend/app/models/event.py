@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean, CheckConstraint, Boolean, false
+from sqlalchemy import ForeignKey, Numeric, String, Integer, DateTime, Boolean, CheckConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -16,13 +16,16 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     organizer_id: Mapped[int] = mapped_column(
-        ForeignKey("user_account.id")
+        ForeignKey("user_account.id"),
+        index=True
     )
     venue_id: Mapped[int | None] = mapped_column(
-        ForeignKey("venue.id")
+        ForeignKey("venue.id"),
+        index=True
     )
     category_id: Mapped[int | None] = mapped_column(
-        ForeignKey("category.id", ondelete="SET NULL")
+        ForeignKey("category.id", ondelete="SET NULL"),
+        index=True
     )
     time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True)

@@ -14,11 +14,12 @@ class EventBooking(Base):
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user_account.id"),
-        primary_key=True,
+        primary_key=True
     )
     event_id: Mapped[int] = mapped_column(
         ForeignKey("event.id"),
         primary_key=True,
+        index=True
     )
     tickets_count: Mapped[int] = mapped_column(Integer, nullable=False)
     price_at_booking: Mapped[Decimal] = mapped_column(Numeric(10, 2))

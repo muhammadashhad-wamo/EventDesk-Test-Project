@@ -67,3 +67,23 @@ class VenueRepository:
             Event.status != EventStatus.CANCELLED.value,
         ))
         return bool(await self.db.scalar(statement))
+
+    async def exists_duplicate(self, *, title: str, street: str, city: str, country: str, exclude_id: int | None = None) -> bool:
+        if exclude_id is None:
+            statement = select(exists().where(
+                Venue.is_active == True,
+                func.lower(Venue.title) == title.strip().lower(),
+                func.lower(Venue.street) == street.strip().lower(),
+                func.lower(Venue.city) == city.strip().lower(),
+                func.lower(Venue.country) == country.strip().lower(),
+            ))
+        else:
+            statement = select(exists().where(
+                Venue.is_active == True,
+                func.lower(Venue.title) == title.strip().lower(),
+                func.lower(Venue.street) == street.strip().lower(),
+                func.lower(Venue.city) == city.strip().lower(),
+                func.lower(Venue.country) == country.strip().lower(),
+                Venue.id != exclude_id
+            ))
+        return bool(await self.db.scalar(statement))

@@ -10,11 +10,6 @@ class UserRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def get_all(self) -> list[User]:
-        statement = select(User)
-        users = await self.db.scalars(statement)
-        return users.all()
-
     async def get_by_id(self, user_id: int) -> User | None:
         return await self.db.get(User, user_id)
 
@@ -36,9 +31,7 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
-    async def update(self, *, user: User, data: dict) -> User:
-        db_user = await self.db.merge(user)
-
+    async def update(self, *, db_user: User, data: dict) -> User:
         for field, value in data.items():
             setattr(db_user, field, value)
 

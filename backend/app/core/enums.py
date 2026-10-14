@@ -28,6 +28,9 @@ class AuditAction(StrEnum):
     BOOKING_CREATED = "booking.created"
     BOOKING_CANCELLED = "booking.cancelled"
     USER_ROLE_CHANGED = "user.role_changed"
+    USER_UPDATED = "user.updated"
+    USER_ACTIVATED = "user.activated"
+    USER_DEACTIVATED = "user.deactivated"
 
 
 class AuditEntity(StrEnum):

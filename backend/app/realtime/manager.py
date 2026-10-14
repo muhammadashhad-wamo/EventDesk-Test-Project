@@ -1,7 +1,12 @@
 import asyncio
+import logging
 from collections import defaultdict
 
 from fastapi import WebSocket
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -32,12 +37,34 @@ class ConnectionManager:
         await self._send_all(list(self._user_sockets.get(user_id, ())), message)
 
     async def _send_all(self, sockets: list[WebSocket], message: dict) -> None:
-        await asyncio.gather(*(self._safe_send(ws, message) for ws in sockets))
+        results = await asyncio.gather(*(self._safe_send(ws, message) for ws in sockets))
+        dead = [ws for ws, ok in zip(sockets, results) if not ok]
+        if dead:
+            await asyncio.gather(*(self._drop(ws) for ws in dead))
 
     @staticmethod
-    async def _safe_send(websocket: WebSocket, message: dict) -> None:
+    async def _safe_send(websocket: WebSocket, message: dict) -> bool:
         try:
-            await websocket.send_json(message)
+            await asyncio.wait_for(websocket.send_json(message), timeout=settings.WEBSOCKET_SEND_TIMEOUT_SECONDS)
+            return True
+        except asyncio.TimeoutError:
+            logger.warning(
+                "WebSocket send timed out after %ss (message type=%s)",
+                settings.WEBSOCKET_SEND_TIMEOUT_SECONDS, message.get("type"),
+            )
+        except Exception:
+            logger.warning(
+                "WebSocket send failed (message type=%s)", message.get("type"), exc_info=True
+            )
+        return False
+
+    async def _drop(self, websocket: WebSocket) -> None:
+        for event_id in [eid for eid, room in self._event_rooms.items() if websocket in room]:
+            self.unsubscribe_event(event_id, websocket)
+        for user_id in [uid for uid, socks in self._user_sockets.items() if websocket in socks]:
+            self.unregister_user(user_id, websocket)
+        try:
+            await asyncio.wait_for(websocket.close(), timeout=settings.WEBSOCKET_SEND_TIMEOUT_SECONDS)
         except Exception:
             pass
 

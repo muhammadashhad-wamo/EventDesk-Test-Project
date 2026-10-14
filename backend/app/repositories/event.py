@@ -11,6 +11,7 @@ from app.models.tag import Tag
 from app.models.venue import Venue
 from app.models.category import Category
 from app.schemas.event_filters import EventFilters
+from app.models.event_booking import EventBooking
 
 _LOAD_ATTENDEES = selectinload(Event.bookings)
 
@@ -190,11 +191,13 @@ class EventRepository:
         db_event.is_active = False
         await self.db.flush()
 
-    async def get_by_id_with_bookings(self, event_id: int) -> Event | None:
+    async def get_by_id_for_update_with_bookings(self, event_id: int) -> Event | None:
         statement = (
             select(Event)
             .where(Event.id == event_id)
-            .options(lazyload("*"), _LOAD_ATTENDEES)
+            .options(_LOAD_ATTENDEES)
+            .with_for_update(of=Event)
+            .execution_options(populate_existing=True)
         )
         return await self.db.scalar(statement)
 
@@ -223,3 +226,15 @@ class EventRepository:
         )
         result = await self.db.execute(statement)
         return result.rowcount
+
+    async def get_involved_user_ids(self, *, event_id: int, candidate_ids: list[int]) -> set[int]:
+        organizer = select(Event.organizer_id).where(
+            Event.id == event_id, Event.organizer_id.in_(candidate_ids)
+        )
+        attendees = select(EventBooking.user_id).where(
+            EventBooking.event_id == event_id,
+            EventBooking.is_active == True,
+            EventBooking.user_id.in_(candidate_ids),
+        )
+        rows = await self.db.scalars(organizer.union(attendees))
+        return set(rows.all())
