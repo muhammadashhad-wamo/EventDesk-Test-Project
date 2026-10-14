@@ -104,8 +104,8 @@ class UserService:
     async def delete_by_id(self, *, id: int, actor_id: int | None = None) -> None:
         if actor_id is not None and id == actor_id:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="The given email is already associated with an account"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Admins cannot deactivate their own account"
             )
 
         db_user = await self.users.get_by_id(user_id=id)
