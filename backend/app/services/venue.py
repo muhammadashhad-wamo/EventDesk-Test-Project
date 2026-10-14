@@ -61,17 +61,43 @@ class VenueService:
             raise HTTPException(status.HTTP_409_CONFLICT, "Venue already exists")
         return VenueResponse.model_validate(venue)
 
-    async def update(self, *, venue_id: int, data: VenueUpdate) -> VenueResponse:
+    async def update(
+        self, *, venue_id: int, data: VenueUpdate
+    ) -> VenueResponse:
         venue = await self.venues.get_by_id(venue_id)
         if venue is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Venue not found")
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, "Venue not found"
+            )
+
+        updates = data.model_dump(exclude_none=True)
+        candidate = {
+            "title": updates.get("title", venue.title),
+            "street": updates.get("street", venue.street),
+            "city": updates.get("city", venue.city),
+            "country": updates.get("country", venue.country),
+        }
+
+        if await self.venues.exists_duplicate(
+            **candidate,
+            exclude_id=venue_id,
+        ):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Venue already exists"
+            )
 
         try:
-            venue = await self.venues.update(venue=venue, data=data.model_dump(exclude_none=True))
+            venue = await self.venues.update(
+                venue=venue,
+                data=updates,
+            )
             await self._db.commit()
         except IntegrityError:
             await self._db.rollback()
-            raise HTTPException(status.HTTP_409_CONFLICT, "Venue already exists")
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Venue already exists"
+            )
+
         return VenueResponse.model_validate(venue)
 
     async def delete(self, *, venue_id: int) -> None:
