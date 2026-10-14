@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -8,6 +8,10 @@ from app.db.base import Base
 
 class Notification(Base):
     __tablename__ = "notification"
+
+    __table_args__ = (
+        Index("ix_notification_user_id_is_read_created_at", "user_id", "is_read", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user_account.id"), nullable=False)
