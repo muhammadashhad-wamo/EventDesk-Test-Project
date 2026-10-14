@@ -45,7 +45,7 @@ class UserService:
         if "email" in update_data:
             update_data["email"] = update_data["email"].lower()
             db_email_user = await self.users.get_by_email(update_data.get("email"))
-            if db_email_user:
+            if db_email_user and db_email_user.id != id:
                 raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
                         detail="The given email is already associated with an account"

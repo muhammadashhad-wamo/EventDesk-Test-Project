@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     JOB_INTERVAL_SECONDS: int = 300
     EVENT_REMINDER_LEAD_TIME_HOURS: int = 24
+    RATE_LIMIT_MAX_REQUESTS: int = 30
+    RATE_LIMIT_WINDOW_SECONDS: int =60
 
     model_config = SettingsConfigDict(
         env_file=(

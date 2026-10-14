@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, status, Query
+from fastapi import APIRouter, status, Query, Depends
 
 from app.schemas.user import UserResponse, UserUpdate, ChangePasswordRequest, UserLookupResponse
 from app.schemas.admin_user import RoleUpdate
@@ -13,9 +13,13 @@ from app.core.dependencies import DbSession
 from app.schemas.pagination import Page, Pagination
 
 from app.core.enums import UserRole
+from app.core.rate_limit import RateLimiter
+from app.core.config import settings
 
 router = APIRouter(prefix="/users", tags=["users"])
 admin_router = APIRouter(prefix="/admin/users", tags=["admin", "users"])
+
+lookup_rate_limit = RateLimiter(max_requests=settings.RATE_LIMIT_MAX_REQUESTS, window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS)
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: CurrentUser):
@@ -45,7 +49,7 @@ async def delete_current_user(
 async def change_password(data: ChangePasswordRequest, current_user: CurrentUser, db: DbSession):
     await UserService(db).update_password(user=current_user, data=data)
 
-@router.get("/lookup", response_model=list[UserLookupResponse])
+@router.get("/lookup", response_model=list[UserLookupResponse], dependencies=[Depends(lookup_rate_limit)])
 async def lookup_users(
     user: CurrentUser,
     db: DbSession,
