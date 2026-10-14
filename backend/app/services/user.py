@@ -94,11 +94,11 @@ class UserService:
         try:
             await self._db.commit()
         except IntegrityError:
+            await self._db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-            await self._db.rollback()
         return UserResponse.model_validate(new_user)
 
     async def delete_by_id(self, *, id: int, actor_id: int | None = None) -> None:
