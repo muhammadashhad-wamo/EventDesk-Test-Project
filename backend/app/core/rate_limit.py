@@ -11,9 +11,28 @@ class RateLimiter:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._hits: dict[int, tuple[float, int]] = {}
+        self._cleanup_interval = 256
+        self._calls_since_cleanup = 0
+
+    def _cleanup_expired(self, now: float) -> None:
+        expired_users = [
+            user_id
+            for user_id, (window_start, _) in self._hits.items()
+            if now - window_start >= self.window_seconds
+        ]
+
+        for user_id in expired_users:
+            del self._hits[user_id]
 
     async def __call__(self, user: CurrentUser) -> None:
         now = time.monotonic()
+
+        self._calls_since_cleanup += 1
+        
+        if self._calls_since_cleanup >= self._cleanup_interval:
+            self._cleanup_expired(now)
+            self._calls_since_cleanup = 0
+
         window_start, count = self._hits.get(user.id, (now, 0))
 
         if now - window_start >= self.window_seconds:
