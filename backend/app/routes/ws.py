@@ -7,20 +7,17 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from app.realtime.auth import authenticate_websocket, get_viewable_ticket_count
 from app.realtime.manager import manager
 
-router = APIRouter(tags=["realtime"])
+from app.core.config import settings
 
-WEBSOCKET_AUTH_TIMEOUT_SECONDS = 10
-WEBSOCKET_RECHECK_INTERVAL_SECONDS = 30
-WEBSOCKET_IDLE_TIMEOUT_SECONDS = 120
-WEBSOCKET_MAX_MESSAGE_CHARS = 4096
+router = APIRouter(tags=["realtime"])
 
 
 async def _receive_token(websocket: WebSocket) -> str | None:
     try:
-        raw = await asyncio.wait_for(websocket.receive_text(), timeout=WEBSOCKET_AUTH_TIMEOUT_SECONDS)
+        raw = await asyncio.wait_for(websocket.receive_text(), timeout=settings.WEBSOCKET_AUTH_TIMEOUT_SECONDS)
     except (asyncio.TimeoutError, WebSocketDisconnect):
         return None
-    if len(raw) > WEBSOCKET_MAX_MESSAGE_CHARS:
+    if len(raw) > settings.WEBSOCKET_MAX_MESSAGE_CHARS:
         return None
     try:
         message = json.loads(raw)
@@ -39,21 +36,21 @@ async def _listen(websocket: WebSocket, still_valid: Callable[[], Awaitable[bool
 
     while True:
         try:
-            raw = await asyncio.wait_for(websocket.receive_text(), timeout=WEBSOCKET_RECHECK_INTERVAL_SECONDS)
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=settings.WEBSOCKET_RECHECK_INTERVAL_SECONDS)
         except asyncio.TimeoutError:
             raw = None
 
         now = loop.time()
         if raw is not None:
-            if len(raw) > WEBSOCKET_MAX_MESSAGE_CHARS:
+            if len(raw) > settings.WEBSOCKET_MAX_MESSAGE_CHARS:
                 await websocket.close(code=status.WS_1009_MESSAGE_TOO_BIG)
                 return
             last_activity = now
-        elif now - last_activity >= WEBSOCKET_IDLE_TIMEOUT_SECONDS:
+        elif now - last_activity >= settings.WEBSOCKET_IDLE_TIMEOUT_SECONDS:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
 
-        if now - last_check >= WEBSOCKET_RECHECK_INTERVAL_SECONDS:
+        if now - last_check >= settings.WEBSOCKET_RECHECK_INTERVAL_SECONDS:
             if not await still_valid():
                 await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
                 return
