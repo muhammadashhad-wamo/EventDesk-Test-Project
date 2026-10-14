@@ -29,6 +29,8 @@ class UserUpdate(BaseModel):
     @field_validator("email")
     @classmethod
     def normalise_email(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
         return normalise_email_helper(v)
 
 class ChangePasswordRequest(BaseModel):
