@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, SecretStr
 
-def check_password_mix_helper(cls, v: SecretStr) -> SecretStr:
+def check_password_mix_helper(v: SecretStr) -> SecretStr:
     pwd = v.get_secret_value()
 
     errors = []
@@ -16,7 +16,7 @@ def check_password_mix_helper(cls, v: SecretStr) -> SecretStr:
 
     return v
 
-def normalise_email_helper(cls, v: str) -> str:
+def normalise_email_helper(v: str) -> str:
     return v.strip().lower()
 
 class RegisterRequest(BaseModel):
