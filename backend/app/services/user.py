@@ -79,7 +79,7 @@ class UserService:
                     detail="The given email is already associated with an account"
                 )
 
-        db_user = await self.users.get_by_id(user_id=id)
+        db_user = await self.users.get_by_id(user_id=user.id)
                 
         if not db_user:
             raise HTTPException(
