@@ -19,6 +19,10 @@ from app.realtime.manager import manager
 
 from datetime import datetime, timezone
 
+ALLOWED_STATUS_TRANSITIONS: dict[EventStatus, set[EventStatus]] = {
+    EventStatus.DRAFT: {EventStatus.PUBLISHED},
+    EventStatus.PUBLISHED: {EventStatus.DRAFT, EventStatus.COMPLETED},
+}
 
 class EventService:
     def __init__(self, db: AsyncSession):
@@ -187,9 +191,9 @@ class EventService:
         actor: UserBase,
         action: AuditAction,
     ) -> EventResponse:
-        db_event = await self.events.get_by_id(event_id=id)
+        db_event = await self.events.get_by_id_for_update_with_bookings(id)
 
-        if not db_event:
+        if not db_event or not db_event.is_active:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Event not found"
@@ -206,6 +210,23 @@ class EventService:
                 )
             if new_status == EventStatus.CANCELLED.value and action != AuditAction.EVENT_CANCELLED:
                 raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Use PATCH /events/{id}/cancel to cancel an event")
+
+            current_status = EventStatus(db_event.status)
+            target_status = EventStatus(new_status)
+
+            if target_status not in ALLOWED_STATUS_TRANSITIONS.get(current_status, set()):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"Cannot change status from {current_status.value} to {target_status.value}",
+                )
+
+            if target_status == EventStatus.DRAFT and any(
+                booking.is_active for booking in db_event.bookings
+            ):
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    "Cannot move a published event back to draft while it has active bookings",
+                )
 
         if update_data.get("time") is not None:
             self._ensure_future(update_data["time"])
